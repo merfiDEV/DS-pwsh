@@ -2,7 +2,10 @@
 const fs = require("node:fs");
 const path = require("node:path");
 const MAGIC = Buffer.from("DSPWSH-RICHLOG-V1\n", "utf8");
-function fail(msg) { console.error(msg); process.exit(1); }
+function fail(msg) {
+  console.error(msg);
+  process.exit(1);
+}
 const [hostPath, richPath, outPath] = process.argv.slice(2);
 if (!hostPath || !richPath || !outPath) {
   fail("usage: node stitch.js <host-exe> <rich-log-exe> <output-exe>");

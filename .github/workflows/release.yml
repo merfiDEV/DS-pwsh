@@ -52,9 +52,6 @@ jobs:
     needs: test
     runs-on: ubuntu-latest
     container: archlinux:latest
-    defaults:
-      run:
-        working-directory: browser-extension
     steps:
       - name: Install build tools
         run: |
@@ -64,10 +61,13 @@ jobs:
       - uses: actions/checkout@v4
       - name: Install dependencies
         run: npm install
+        working-directory: browser-extension
       - name: Build Arch Linux executable
         run: npx pkg bridge/host.js --targets node18-linux-x64 --out-path dist
+        working-directory: browser-extension
       - name: Rename artifact
         shell: bash
+        working-directory: browser-extension
         run: |
           set -euo pipefail
           src=$(find dist -maxdepth 1 -type f -name "host*" | head -1)

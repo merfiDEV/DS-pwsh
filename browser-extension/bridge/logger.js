@@ -20,6 +20,10 @@ function detectRichLogger() {
   richLoggerChecked = true;
   richLoggerCommand = null;
   if (process.env.DS_PWSH_NO_RICH === "1") return null;
+  // Inside a pkg single-file executable the helper script is not a real file
+  // on disk, so an external Python interpreter cannot read it. Fall back to
+  // plain text logs there.
+  if (process.pkg) return null;
   if (!fs.existsSync(RICH_LOG_SCRIPT)) return null;
   const python = resolvePythonForRich();
   try {

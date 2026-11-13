@@ -15,14 +15,16 @@
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",
-    "format:check": "prettier --check ."
+    "format:check": "prettier --check .",
+    "build:exe": "pkg bridge/host.js --out-path dist"
   },
   "engines": {
     "node": ">=18"
   },
   "devDependencies": {
     "eslint": "^9.15.0",
-    "prettier": "^3.4.0"
+    "prettier": "^3.4.0",
+    "@yao-pkg/pkg": "^6.25.0"
   },
   "files": [
     "bridge/host.js",
@@ -35,5 +37,19 @@
     "popup.css",
     "manifest.json",
     "README.md"
-  ]
+  ],
+  "pkg": {
+    "scripts": [
+      "bridge/*.js"
+    ],
+    "assets": [
+      "bridge/rich-log.py"
+    ],
+    "targets": [
+      "node18-linux-x64",
+      "node18-win-x64",
+      "node18-macos-x64"
+    ],
+    "outputPath": "dist"
+  }
 }

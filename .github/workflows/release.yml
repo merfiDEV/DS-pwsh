@@ -1,0 +1,95 @@
+name: Release
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: browser-extension
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm install
+      - run: npm test
+
+  build:
+    needs: test
+    name: Build ${{ matrix.target }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            target: node18-linux-x64
+            artifact: ds-pwsh-bridge-linux-x64
+          - os: windows-latest
+            target: node18-win-x64
+            artifact: ds-pwsh-bridge-win-x64.exe
+          - os: macos-latest
+            target: node18-macos-x64
+            artifact: ds-pwsh-bridge-macos-x64
+    defaults:
+      run:
+        working-directory: browser-extension
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm install
+      - name: Build executable
+        run: npx pkg bridge/host.js --targets ${{ matrix.target }} --out-path dist
+      - name: Rename artifact
+        shell: bash
+        run: |
+          set -e
+          ls -la dist
+          src=$(ls dist | head -1)
+          mv "dist/$src" "dist/${{ matrix.artifact }}"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact }}
+          path: browser-extension/dist/${{ matrix.artifact }}
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          merge-multiple: true
+      - name: Compute release tag
+        id: meta
+        shell: bash
+        run: |
+          set -e
+          version=$(node -p "require(\"./browser-extension/package.json\").version")
+          if [[ "${GITHUB_REF}" == refs/tags/v* ]]; then
+            tag="${GITHUB_REF_NAME}"
+          else
+            tag="v${version}-build.${GITHUB_RUN_NUMBER}"
+          fi
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+      - name: Create release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.meta.outputs.tag }}
+          name: DS-pwsh bridge ${{ steps.meta.outputs.tag }}
+          generate_release_notes: true
+          files: artifacts/*
+          fail_on_unmatched_files: true
+

@@ -22,23 +22,9 @@ jobs:
       - run: npm install
       - run: npm test
 
-  build:
+  build-ubuntu:
     needs: test
-    name: Build ${{ matrix.target }}
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - os: ubuntu-latest
-            target: node18-linux-x64
-            artifact: ds-pwsh-bridge-linux-x64
-          - os: windows-latest
-            target: node18-win-x64
-            artifact: ds-pwsh-bridge-win-x64.exe
-          - os: macos-latest
-            target: node18-macos-x64
-            artifact: ds-pwsh-bridge-macos-x64
+    runs-on: ubuntu-latest
     defaults:
       run:
         working-directory: browser-extension
@@ -48,22 +34,75 @@ jobs:
         with:
           node-version: 20
       - run: npm install
-      - name: Build executable
-        run: npx pkg bridge/host.js --targets ${{ matrix.target }} --out-path dist
+      - name: Build Ubuntu executable
+        run: npx pkg bridge/host.js --targets node18-linux-x64 --out-path dist
       - name: Rename artifact
         shell: bash
         run: |
-          set -e
-          ls -la dist
-          src=$(ls dist | head -1)
-          mv "dist/$src" "dist/${{ matrix.artifact }}"
+          set -euo pipefail
+          src=$(find dist -maxdepth 1 -type f -name "host*" | head -1)
+          test -n "$src"
+          mv "$src" dist/ds-pwsh-bridge-ubuntu-x64
       - uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.artifact }}
-          path: browser-extension/dist/${{ matrix.artifact }}
+          name: ds-pwsh-bridge-ubuntu-x64
+          path: browser-extension/dist/ds-pwsh-bridge-ubuntu-x64
+
+  build-arch:
+    needs: test
+    runs-on: ubuntu-latest
+    container: archlinux:latest
+    defaults:
+      run:
+        working-directory: browser-extension
+    steps:
+      - name: Install build tools
+        run: pacman -Sy --noconfirm nodejs npm git
+      - uses: actions/checkout@v4
+      - name: Install dependencies
+        run: npm install
+      - name: Build Arch Linux executable
+        run: npx pkg bridge/host.js --targets node18-linux-x64 --out-path dist
+      - name: Rename artifact
+        shell: bash
+        run: |
+          set -euo pipefail
+          src=$(find dist -maxdepth 1 -type f -name "host*" | head -1)
+          test -n "$src"
+          mv "$src" dist/ds-pwsh-bridge-arch-x64
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ds-pwsh-bridge-arch-x64
+          path: browser-extension/dist/ds-pwsh-bridge-arch-x64
+
+  build-windows:
+    needs: test
+    runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: browser-extension
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm install
+      - name: Build Windows executable
+        run: npx pkg bridge/host.js --targets node18-win-x64 --out-path dist
+      - name: Rename artifact
+        shell: bash
+        run: |
+          set -euo pipefail
+          src=$(find dist -maxdepth 1 -type f -name "host*" | head -1)
+          test -n "$src"
+          mv "$src" dist/ds-pwsh-bridge-win-x64.exe
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ds-pwsh-bridge-win-x64.exe
+          path: browser-extension/dist/ds-pwsh-bridge-win-x64.exe
 
   release:
-    needs: build
+    needs: [build-ubuntu, build-arch, build-windows]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -75,7 +114,7 @@ jobs:
         id: meta
         shell: bash
         run: |
-          set -e
+          set -euo pipefail
           version=$(node -p "require(\"./browser-extension/package.json\").version")
           if [[ "${GITHUB_REF}" == refs/tags/v* ]]; then
             tag="${GITHUB_REF_NAME}"

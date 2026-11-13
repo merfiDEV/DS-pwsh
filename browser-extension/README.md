@@ -99,6 +99,22 @@ extension's Chrome origin and rejects shells that do not match the host OS. The
 extension injects only on `chat.deepseek.com`. The popup's **Закончить сессию**
 action removes the open chat from the DeepSeek sidebar after a second confirmation.
 
+
+## Prebuilt binaries
+
+Every push to `main` (and every `v*` tag) builds standalone executables of the
+bridge and attaches them to a GitHub Release:
+
+- `ds-pwsh-bridge-arch-x64` - Arch Linux (built in an Arch container)
+- `ds-pwsh-bridge-ubuntu-x64` - Ubuntu
+- `ds-pwsh-bridge-win-x64.exe` - Windows
+
+Download the file for your platform, make it executable (`chmod +x` on Linux)
+and run it from the project directory instead of `node .../host.js`. Rich
+console logging is disabled in these executables (the Python helper is not
+bundled); they use plain text logs. The browser extension itself is not
+bundled - load `browser-extension/` unpacked in Chrome as usual.
+
 ## Screenshots
 
 | Popup | Rich console log |

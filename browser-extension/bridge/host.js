@@ -1,20 +1,34 @@
 "use strict";
 
 const path = require("node:path");
-const { HOST, DEEPSEEK_URL, configuredMinimumSendDelay } = require("./config");
+const { DEEPSEEK_URL, configuredMinimumSendDelay } = require("./config");
 const { shellForPlatform, executeCommand, validateExecutionRequest } = require("./executor");
 const { createBridgeServer, listenOnAvailablePort } = require("./server");
-const { detectRichLogger } = require("./logger");
+const { detectRichLogger, logBanner } = require("./logger");
 const { openBrowser } = require("./browser");
+const { printBanner } = require("./banner");
+
+let version = "";
+try {
+  version = require("../package.json").version || "";
+} catch {
+  version = "";
+}
 
 if (require.main === module) {
-  setImmediate(() => detectRichLogger());
+  // Detect the Rich renderer up front so the startup banner is styled.
+  detectRichLogger();
   const server = createBridgeServer();
   listenOnAvailablePort(server)
     .then((port) => {
-      console.log(`[DS-pwsh] Terminal bridge listening at http://${HOST}:${port}`);
-      console.log(`[DS-pwsh] Shell: ${shellForPlatform(process.platform)}`);
-      console.log(`[DS-pwsh] Working directory: ${path.resolve(process.cwd())}`);
+      const info = {
+        port,
+        shell: shellForPlatform(process.platform),
+        cwd: path.resolve(process.cwd()),
+        platform: process.platform,
+        version,
+      };
+      if (!logBanner(info)) printBanner(info);
       openBrowser(DEEPSEEK_URL);
     })
     .catch((error) => {

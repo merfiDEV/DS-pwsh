@@ -85,7 +85,11 @@ function extractAppendedRichLog() {
   } catch {
     return null;
   } finally {
-    if (fd !== undefined) { try { fs.closeSync(fd); } catch {} }
+    if (fd !== undefined) {
+      try {
+        fs.closeSync(fd);
+      } catch {}
+    }
   }
 }
 
@@ -187,3 +191,10 @@ module.exports = {
   logCommandResult,
   formatCommandForLog,
 };
+
+function logBanner({ port, shell, cwd, platform, version }) {
+  if (logViaRich({ event: "banner", port, shell, cwd, platform, version })) return true;
+  return false;
+}
+
+module.exports.logBanner = logBanner;

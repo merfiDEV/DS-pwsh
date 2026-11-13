@@ -5,6 +5,8 @@ Reads a single JSON object from stdin and prints a styled representation.
 Supported events:
   {"event": "start",  "shell": "...", "cwd": "...", "command": "..."}
   {"event": "result", "shell": "...", "exitCode": 0, "signal": null}
+  {"event": "banner", "port": 49152, "shell": "...", "cwd": "...",
+                      "platform": "...", "version": "1.1.6"}
 
 Exits non-zero (without traceback) if Rich is unavailable, so the caller
 can fall back to plain console logging.
@@ -17,15 +19,79 @@ try:
     from rich.panel import Panel
     from rich.syntax import Syntax
     from rich.text import Text
+    from rich.align import Align
+    from rich.table import Table
 except Exception as exc:  # pragma: no cover - optional dependency
     print(f"rich unavailable: {exc}", file=sys.stderr)
     raise SystemExit(2)
+
+
+TITLE_ART = r"""
+  ____  ____        ____        _
+ |  _ \/ ___|      |  _ \__      _| |__  
+ | | | \___ \ _____| |_) \ \ /\ / / '_ \ 
+ | |_| |___) |_____|  __/ \ V  V /| | | |
+ |____/|____/      |_|     \_/\_/ |_| |_|
+""".strip("\n")
+
+
+def render_banner(payload: dict) -> None:
+    console = Console(highlight=False)
+    port = payload.get("port")
+    shell = str(payload.get("shell") or "")
+    cwd = str(payload.get("cwd") or "")
+    platform = str(payload.get("platform") or "")
+    version = str(payload.get("version") or "")
+
+    art = Text(TITLE_ART, style="bold cyan")
+
+    subtitle = Text()
+    subtitle.append("DS-pwsh Terminal Bridge", style="bold white")
+    if version:
+        subtitle.append(f"  v{version}", style="dim")
+    subtitle.append("   ", style="")
+    subtitle.append("● RUNNING", style="bold green")
+
+    info = Table.grid(padding=(0, 2))
+    info.add_column(style="bold", justify="right")
+    info.add_column(style="")
+    info.add_row("Address", f"[cyan]http://127.0.0.1:{port}[/cyan]")
+    info.add_row("Shell", shell)
+    info.add_row("Platform", platform)
+    info.add_row("Cwd", cwd)
+
+    hint = Text("Waiting for commands from the browser extension…", style="dim")
+    hint.append("\nPress Ctrl+C to stop.", style="dim")
+
+    body = Table.grid(padding=(0, 0))
+    body.add_column()
+    body.add_row(Align.center(art))
+    body.add_row(Text(""))
+    body.add_row(Align.center(subtitle))
+    body.add_row(Text(""))
+    body.add_row(info)
+    body.add_row(Text(""))
+    body.add_row(Align.center(hint))
+
+    console.print(
+        Panel(
+            body,
+            title="[bold green]bridge started[/bold green]",
+            title_align="left",
+            border_style="green",
+            padding=(1, 2),
+        )
+    )
 
 
 def render(payload: dict) -> None:
     console = Console(highlight=False)
     event = payload.get("event")
     shell = str(payload.get("shell") or "")
+
+    if event == "banner":
+        render_banner(payload)
+        return
 
     if event == "start":
         cwd = str(payload.get("cwd") or "")

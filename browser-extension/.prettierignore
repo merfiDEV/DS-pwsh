@@ -6,3 +6,6 @@ release/
 *.min.js
 *.bak
 *.part
+
+# Python is not formatted by Prettier
+*.py

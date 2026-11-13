@@ -13,7 +13,7 @@ const MAX_REQUEST_BYTES = 64 * 1024;
 const MAX_OUTPUT_BYTES = 1024 * 1024;
 const MAX_COMMAND_LENGTH = 32_000;
 const COMMAND_TIMEOUT_MS = 60_000;
-const DEFAULT_MINIMUM_SEND_DELAY_MS = 5_000;
+const DEFAULT_MINIMUM_SEND_DELAY_MS = 0;
 const MAXIMUM_SEND_DELAY_MS = 180_000;
 
 function configuredMinimumSendDelay(value = process.env.DS_PWSH_MIN_SEND_DELAY_MS) {
@@ -29,10 +29,6 @@ function configuredMinimumSendDelay(value = process.env.DS_PWSH_MIN_SEND_DELAY_M
     );
   }
   return delayMs;
-}
-
-function delay(milliseconds) {
-  return new Promise((resolve) => setTimeout(resolve, milliseconds));
 }
 
 function shellForPlatform(platform) {
@@ -180,6 +176,24 @@ function executeCommand({ shell, command, cwd }, options = {}) {
   });
 }
 
+function formatCommandForLog(command) {
+  return command
+    .split("\n")
+    .map((line, index) => (index === 0 ? line : `    | ${line}`))
+    .join("\n");
+}
+
+function logCommandStart({ shell, command, cwd }) {
+  console.log(`[DS-pwsh] >>> ${shell} (cwd: ${cwd})`);
+  console.log(`[DS-pwsh]     ${formatCommandForLog(command)}`);
+}
+
+function logCommandResult({ shell }, result) {
+  const code = result?.exitCode ?? "?";
+  const signal = result?.signal ? ` signal=${result.signal}` : "";
+  console.log(`[DS-pwsh] <<< exit=${code}${signal}`);
+}
+
 function createBridgeServer(options = {}) {
   const platform = options.platform || process.platform;
   const defaultCwd = path.resolve(options.defaultCwd || process.cwd());
@@ -188,7 +202,6 @@ function createBridgeServer(options = {}) {
   if (!Number.isSafeInteger(minimumSendDelayMs) || minimumSendDelayMs < 0) {
     throw new Error("minimumSendDelayMs must be a non-negative integer.");
   }
-  const wait = options.wait || delay;
   const execute = options.execute || executeCommand;
 
   return http.createServer(async (request, response) => {
@@ -256,8 +269,9 @@ function createBridgeServer(options = {}) {
       }
       const body = JSON.parse(Buffer.concat(chunks).toString("utf8"));
       const validated = validateExecutionRequest(body, { platform, defaultCwd });
+      logCommandStart(validated);
       const result = await execute(validated, { platform });
-      await wait(minimumSendDelayMs);
+      logCommandResult(validated, result);
       response.writeHead(200, {
         ...corsHeaders,
         "Content-Type": "application/json; charset=utf-8",

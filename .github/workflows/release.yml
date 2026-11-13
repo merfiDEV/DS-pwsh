@@ -35,7 +35,7 @@ jobs:
           node-version: 20
       - run: npm install
       - name: Build Ubuntu executable
-        run: npx pkg bridge/host.js --targets node18-linux-x64 --out-path dist
+        run: npx pkg@5.8.1 bridge/host.js --targets node18-linux-x64 --out-path dist
       - name: Rename artifact
         shell: bash
         run: |
@@ -57,13 +57,13 @@ jobs:
         run: |
           pacman-key --init
           pacman-key --populate archlinux
-          pacman -Sy --needed --noconfirm nodejs npm git
+          pacman -Syu --needed --noconfirm nodejs npm git
       - uses: actions/checkout@v4
       - name: Install dependencies
         run: npm install
         working-directory: browser-extension
       - name: Build Arch Linux executable
-        run: npx pkg bridge/host.js --targets node18-linux-x64 --out-path dist
+        run: npx pkg@5.8.1 bridge/host.js --targets node18-linux-x64 --out-path dist
         working-directory: browser-extension
       - name: Rename artifact
         shell: bash
@@ -91,7 +91,7 @@ jobs:
           node-version: 20
       - run: npm install
       - name: Build Windows executable
-        run: npx pkg bridge/host.js --targets node18-win-x64 --out-path dist
+        run: npx pkg@5.8.1 bridge/host.js --targets node18-win-x64 --out-path dist
       - name: Rename artifact
         shell: bash
         run: |

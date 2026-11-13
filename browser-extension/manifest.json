@@ -1,10 +1,10 @@
 {
   "manifest_version": 3,
   "name": "DS-pwsh Terminal Bridge",
-  "version": "1.1.2",
+  "version": "1.1.3",
   "description": "Runs DS-pwsh commands through a local terminal bridge on DeepSeek.",
   "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA4i2TPjvm7h8F2i6W+L6o3LBMl5EcZPjP/otrtr0OZph/en9mCHu5c5CQ3EjkvFupWZ5UzQKGUy8NdsA+0m4OT/Up5JqIgj74GAmCdCVPbtCRV6Bk+PNe7hFvxiFSPJO7v0aOaZNxIWL8JZFhCKm5f9GYHEq23xdkAIgcxGcWXF8c+5kPurbJhmm9+yeCmdl28/8BbLuHhQh7jIaP7L9p8aDlnGoG9VIxZk2JafkQX8hJ0u11C5sC3PzQXdtDQvLOBangvmE3ZIyTDHAlocrQmUaZXTr/XbAC2xwpMYURXExQk+97SKrBzxeZVB+MqFaJaAOOShb+f1+i+TSYHfCr+QIDAQAB",
-  "permissions": ["storage", "clipboardWrite"],
+  "permissions": ["storage", "clipboardWrite", "activeTab"],
   "host_permissions": ["http://127.0.0.1/*"],
   "background": {
     "service_worker": "background.js"

@@ -39,8 +39,18 @@
         <button id="copy-instructions" type="button">Скопировать инструкцию</button>
       </div>
 
+      <button id="delete-current-chat" class="danger-button" type="button">Закончить сессию</button>
+
       <p id="notice" role="status" aria-live="polite"></p>
     </main>
+    <dialog id="delete-confirm" aria-labelledby="delete-confirm-title">
+      <h2 id="delete-confirm-title">Удалить текущий чат?</h2>
+      <p>Чат будет удалён из истории DeepSeek. Это действие нельзя отменить.</p>
+      <div class="confirm-actions">
+        <button id="cancel-delete" type="button">Отмена</button>
+        <button id="confirm-delete" class="danger-button" type="button">Удалить чат</button>
+      </div>
+    </dialog>
     <script src="popup.js"></script>
   </body>
 </html>

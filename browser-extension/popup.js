@@ -82,11 +82,11 @@ async function updateBridgeStatus() {
     });
     if (!response?.ok) throw new Error(response?.error || "Мост недоступен");
     const status = response.status;
-    dot.className = "status-dot online";
+    if (dot) dot.className = "status-dot online";
     title.textContent = `Подключено · ${status.shell}`;
     detail.textContent = `127.0.0.1:${status.port} · ${status.cwd}`;
   } catch (error) {
-    dot.className = "status-dot offline";
+    if (dot) dot.className = "status-dot offline";
     title.textContent = "Нет подключения к мосту";
     detail.textContent =
       error?.message || "Запустите локальный bridge из папки проекта.";
@@ -128,6 +128,31 @@ document
       showNotice(`Не удалось скопировать инструкцию: ${error.message || String(error)}`, true);
     }
   });
+
+const deleteDialog = document.getElementById("delete-confirm");
+document.getElementById("delete-current-chat").addEventListener("click", () => {
+  deleteDialog.showModal();
+});
+document.getElementById("cancel-delete").addEventListener("click", () => {
+  deleteDialog.close();
+});
+document.getElementById("confirm-delete").addEventListener("click", async (event) => {
+  const button = event.currentTarget;
+  button.disabled = true;
+  showNotice("Удаляю текущий чат…");
+  try {
+    const [tab] = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
+    if (!tab?.id) throw new Error("Не найдена активная вкладка браузера.");
+    const response = await chrome.tabs.sendMessage(tab.id, { type: "DELETE_CURRENT_CHAT" });
+    if (!response?.ok) throw new Error(response?.error || "Не удалось удалить чат.");
+    deleteDialog.close();
+    showNotice("Чат удалён из истории DeepSeek.");
+  } catch (error) {
+    showNotice(`${error.message || String(error)} Проверь, что открыта вкладка DeepSeek, затем перезагрузи её.`, true);
+  } finally {
+    button.disabled = false;
+  }
+});
 
 loadOptions();
 updateBridgeStatus();

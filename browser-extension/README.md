@@ -67,4 +67,5 @@ chats. Each command times out after 60 seconds and output is capped at 1 MiB.
 The extension searches the bridge's small local port range automatically; no
 port needs to be configured manually. The bridge accepts requests only from the
 extension's Chrome origin and rejects shells that do not match the host OS. The
-extension injects only on `chat.deepseek.com`.
+extension injects only on `chat.deepseek.com`. The popup's **Закончить сессию**
+action removes the open chat from the DeepSeek sidebar after a second confirmation.

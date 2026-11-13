@@ -726,4 +726,59 @@
   }, true);
   document.addEventListener("keydown", onUserSend, true);
   document.addEventListener("input", deliverPendingResults, true);
+
+  async function deleteCurrentChat() {
+    const sessionId = location.pathname.match(/\/a\/chat\/s\/([^/]+)/)?.[1];
+    if (!sessionId) {
+      throw new Error("Открой чат DeepSeek, который нужно удалить.");
+    }
+
+    const link = Array.from(
+      document.querySelectorAll('a[href*="/a/chat/s/"]'),
+    ).find((anchor) => {
+      try {
+        return new URL(anchor.href).pathname.endsWith(`/a/chat/s/${sessionId}`);
+      } catch {
+        return false;
+      }
+    });
+    if (!link) throw new Error("Чат не найден в боковой панели DeepSeek.");
+
+    const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+    link.dispatchEvent(new MouseEvent("mouseover", { bubbles: true }));
+    link.dispatchEvent(new MouseEvent("mouseenter", { bubbles: true }));
+    const menuButton = link.querySelector('div[role="button"]');
+    if (!menuButton) throw new Error("Не найдена кнопка меню чата.");
+    menuButton.click();
+    await wait(500);
+
+    const deleteOption = Array.from(
+      document.querySelectorAll(".ds-dropdown-menu-option--error"),
+    ).find((option) => option.getClientRects().length > 0);
+    if (!deleteOption) throw new Error("Не найден пункт удаления чата.");
+    deleteOption.click();
+    await wait(500);
+
+    const modal = document.querySelector(".ds-modal-content--dialog");
+    const confirmButton = modal?.querySelector('div[class*="ds-button--error"]');
+    if (!confirmButton) throw new Error("Не найдено подтверждение удаления DeepSeek.");
+    confirmButton.click();
+
+    for (let attempt = 0; attempt < 20; attempt += 1) {
+      await wait(250);
+      const stillListed = Array.from(
+        document.querySelectorAll('a[href*="/a/chat/s/"]'),
+      ).some((anchor) => anchor.href.includes(`/a/chat/s/${sessionId}`));
+      if (!stillListed) return { ok: true };
+    }
+    throw new Error("DeepSeek не подтвердил удаление чата.");
+  }
+
+  chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
+    if (message?.type !== "DELETE_CURRENT_CHAT") return false;
+    deleteCurrentChat()
+      .then(sendResponse)
+      .catch((error) => sendResponse({ ok: false, error: error.message || String(error) }));
+    return true;
+  });
 })();

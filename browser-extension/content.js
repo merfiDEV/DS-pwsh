@@ -3,6 +3,7 @@
   const COMMAND_RESPONSE_TIMEOUT_MS = 260_000;
   const handledBlocks = new WeakSet();
   const handledMessages = new WeakSet();
+  const queuedMessages = new WeakSet();
   const scheduledMessages = new WeakMap();
   const knownUserMessages = new WeakSet();
   const pendingResults = [];
@@ -11,6 +12,9 @@
   let awaitingNewUserMessage = false;
   let lastUserMessage = null;
   let pendingUserText = "";
+  // Keep whole response batches in the order they were detected. This also
+  // prevents a later, faster batch from reaching the chat before an earlier one.
+  let executionQueue = Promise.resolve();
   const DEFAULT_SEND_DELAY_MS = 5000;
 
   async function getSendDelayMs(runtime) {
@@ -240,7 +244,7 @@
       (block) => !isUserMessage(block) && !handledBlocks.has(block),
     );
     const commands = globalThis.DSPwshCommandUtils.collectCommands(blocks, getShell, getCommand);
-    if (!commands.length) {
+    if (!commands.length || queuedMessages.has(message) || handledMessages.has(message)) {
       return {
         ok: false,
         error: blocks.length
@@ -254,10 +258,19 @@
     scheduledMessages.delete(message);
     for (const { block } of commands) handledBlocks.add(block);
     handledMessages.add(message);
+    queuedMessages.add(message);
     awaitingAssistant = false;
     awaitingNewUserMessage = false;
-    void executeCommands(commands);
+    enqueueCommands(commands);
     return { ok: true, count: commands.length };
+  }
+
+  function enqueueCommands(commands) {
+    executionQueue = executionQueue
+      .then(() => executeCommands(commands))
+      .catch((error) => {
+        showToast(`Не удалось обработать пакет команд: ${extensionErrorMessage(error)}`, true);
+      });
   }
 
   function scheduleBlock(pre) {
@@ -268,6 +281,7 @@
     );
     if (message && handledMessages.has(message)) return;
     const scope = message || pre;
+    if (message && (handledMessages.has(message) || queuedMessages.has(message))) return;
     const signature = blockSignature(message || pre);
     const previous = scheduledMessages.get(scope);
     if (previous?.signature === signature) return;
@@ -292,9 +306,10 @@
       for (const { block } of commands) handledBlocks.add(block);
       if (message) {
         handledMessages.add(message);
+        queuedMessages.add(message);
       }
       awaitingAssistant = false;
-      executeCommands(commands);
+      enqueueCommands(commands);
     }, RUN_DELAY_MS);
     scheduledMessages.set(scope, { timer, signature });
   }

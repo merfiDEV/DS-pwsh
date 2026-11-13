@@ -57,7 +57,10 @@ jobs:
         working-directory: browser-extension
     steps:
       - name: Install build tools
-        run: pacman -Sy --noconfirm nodejs npm git
+        run: |
+          pacman-key --init
+          pacman-key --populate archlinux
+          pacman -Sy --needed --noconfirm nodejs npm git
       - uses: actions/checkout@v4
       - name: Install dependencies
         run: npm install
@@ -93,7 +96,10 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          src=$(find dist -maxdepth 1 -type f -name "host*" | head -1)
+          src=$(ls dist/host* 2>/dev/null | head -1 || true)
+          if [ -z "$src" ]; then
+            src=$(find dist -maxdepth 1 -type f -name "host*" | head -1)
+          fi
           test -n "$src"
           mv "$src" dist/ds-pwsh-bridge-win-x64.exe
       - uses: actions/upload-artifact@v4

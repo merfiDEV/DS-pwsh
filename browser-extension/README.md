@@ -21,6 +21,22 @@ on Linux/macOS.
    node C:\path\to\DS-pwsh\browser-extension\bridge\host.js
    ```
 
+   The bridge logs every command it runs (with syntax highlighting) to the
+   console. This uses [Rich](https://github.com/Textualize/rich) through a small
+   Python helper (`bridge/rich-log.py`). Create a local virtualenv once to
+   enable it:
+
+   ```sh
+   cd /path/to/DS-pwsh/browser-extension/bridge
+   uv venv .rich-venv
+   uv pip install --python .rich-venv/bin/python rich
+   ```
+
+   The virtualenv is git-ignored. If Rich is not installed, the bridge falls
+   back to plain `[DS-pwsh] >>> ...` text logs. Set `DS_PWSH_NO_RICH=1` to force
+   plain logs, or `DS_PWSH_PYTHON=/path/to/python` to point at another
+   interpreter that has Rich installed.
+
    Keep this terminal open. The bridge automatically selects a free port in
    `49152-49183` and prints the selected address. Node.js 18 or later is
    required.

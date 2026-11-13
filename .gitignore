@@ -15,3 +15,8 @@ __pycache__/
 dist/
 build/
 release/
+# Local PyInstaller helper binary; built by scripts/build-cotleta.sh
+rich-log-bin
+rich-log-bin.bin
+rich-log-bin.exe
+rich-log.exe

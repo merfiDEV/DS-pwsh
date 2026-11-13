@@ -16,7 +16,8 @@
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "build:exe": "pkg bridge/host.js --out-path dist"
+    "build:exe": "pkg bridge/host.js --out-path dist",
+    "build:cotleta": "bash scripts/build-cotleta.sh"
   },
   "engines": {
     "node": ">=18"

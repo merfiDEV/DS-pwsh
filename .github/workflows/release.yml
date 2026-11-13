@@ -33,16 +33,13 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
       - run: npm install
+      - run: python -m pip install --upgrade pip rich pyinstaller
       - name: Build Ubuntu executable
-        run: npx pkg@5.8.1 bridge/host.js --targets node18-linux-x64 --out-path dist
-      - name: Rename artifact
-        shell: bash
-        run: |
-          set -euo pipefail
-          src=$(find dist -maxdepth 1 -type f -name "host*" | head -1)
-          test -n "$src"
-          mv "$src" dist/ds-pwsh-bridge-ubuntu-x64
+        run: DIST=dist OUT=dist/ds-pwsh-bridge-ubuntu-x64 TARGET=node18-linux-x64 bash scripts/build-cotleta.sh
       - uses: actions/upload-artifact@v4
         with:
           name: ds-pwsh-bridge-ubuntu-x64
@@ -57,22 +54,17 @@ jobs:
         run: |
           pacman-key --init
           pacman-key --populate archlinux
-          pacman -Syu --needed --noconfirm nodejs npm git
+          pacman -Syu --needed --noconfirm nodejs npm git python python-pip
       - uses: actions/checkout@v4
-      - name: Install dependencies
+      - name: Install JS dependencies
         run: npm install
         working-directory: browser-extension
-      - name: Build Arch Linux executable
-        run: npx pkg@5.8.1 bridge/host.js --targets node18-linux-x64 --out-path dist
+      - name: Install Python dependencies
+        run: python -m pip install --break-system-packages --upgrade pip rich pyinstaller
         working-directory: browser-extension
-      - name: Rename artifact
-        shell: bash
+      - name: Build Arch executable
+        run: DIST=dist OUT=dist/ds-pwsh-bridge-arch-x64 TARGET=node18-linux-x64 bash scripts/build-cotleta.sh
         working-directory: browser-extension
-        run: |
-          set -euo pipefail
-          src=$(find dist -maxdepth 1 -type f -name "host*" | head -1)
-          test -n "$src"
-          mv "$src" dist/ds-pwsh-bridge-arch-x64
       - uses: actions/upload-artifact@v4
         with:
           name: ds-pwsh-bridge-arch-x64
@@ -89,19 +81,14 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
       - run: npm install
+      - run: python -m pip install --upgrade pip rich pyinstaller
       - name: Build Windows executable
-        run: npx pkg@5.8.1 bridge/host.js --targets node18-win-x64 --out-path dist
-      - name: Rename artifact
         shell: bash
-        run: |
-          set -euo pipefail
-          src=$(ls dist/host* 2>/dev/null | head -1 || true)
-          if [ -z "$src" ]; then
-            src=$(find dist -maxdepth 1 -type f -name "host*" | head -1)
-          fi
-          test -n "$src"
-          mv "$src" dist/ds-pwsh-bridge-win-x64.exe
+        run: DIST=dist OUT=dist/ds-pwsh-bridge-win-x64.exe TARGET=node18-win-x64 bash scripts/build-cotleta.sh
       - uses: actions/upload-artifact@v4
         with:
           name: ds-pwsh-bridge-win-x64.exe

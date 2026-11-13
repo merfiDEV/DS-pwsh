@@ -109,9 +109,9 @@ bridge and attaches them to a GitHub Release:
 - `ds-pwsh-bridge-win-x64.exe` - Windows
 
 Download the file for your platform, make it executable (`chmod +x` on Linux)
-and run it from the project directory instead of `node .../host.js`. Rich
-console logging is disabled in these executables (the Python helper is not
-bundled); they use plain text logs. The browser extension itself is not
+and run it from the project directory instead of `node .../host.js`. Each
+executable bundles the Node bridge and a PyInstaller-packed Rich logger, so
+syntax-highlighted console output works without a local Python install. The browser extension itself is not
 bundled - load `browser-extension/` unpacked in Chrome as usual.
 
 ## Screenshots

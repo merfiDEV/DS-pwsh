@@ -65,6 +65,7 @@ on Linux/macOS.
    `node`. The value is reported by the bridge `/health` endpoint for
    diagnostics; the actual pause before results are sent is configured in the
    extension popup ("Кулдаун отправки").
+
 2. In Chrome, open `chrome://extensions`, enable **Developer mode**, choose
    **Load unpacked**, and select this `browser-extension` directory.
    After updating the extension's files, click **Reload** on its card and

@@ -2,3 +2,7 @@
 *.part
 node_modules/
 .DS_Store
+
+# Local Python venv for the Rich log renderer
+browser-extension/bridge/.rich-venv/
+__pycache__/

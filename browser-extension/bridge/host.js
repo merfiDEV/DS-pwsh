@@ -1,7 +1,7 @@
 "use strict";
 
 const http = require("node:http");
-const { spawn } = require("node:child_process");
+const { spawn, spawnSync } = require("node:child_process");
 const fs = require("node:fs");
 const path = require("node:path");
 
@@ -176,6 +176,54 @@ function executeCommand({ shell, command, cwd }, options = {}) {
   });
 }
 
+const RICH_LOG_SCRIPT = path.join(__dirname, "rich-log.py");
+const RICH_VENV_PYTHON = path.join(__dirname, ".rich-venv", "bin", "python");
+
+let richLoggerChecked = false;
+let richLoggerCommand = null;
+
+function resolvePythonForRich() {
+  if (fs.existsSync(RICH_VENV_PYTHON)) return RICH_VENV_PYTHON;
+  return process.env.DS_PWSH_PYTHON || "python3";
+}
+
+function detectRichLogger() {
+  if (richLoggerChecked) return richLoggerCommand;
+  richLoggerChecked = true;
+  richLoggerCommand = null;
+  if (process.env.DS_PWSH_NO_RICH === "1") return null;
+  if (!fs.existsSync(RICH_LOG_SCRIPT)) return null;
+  const python = resolvePythonForRich();
+  try {
+    const probe = spawnSync(
+      python,
+      ["-c", "import rich"],
+      { stdio: "ignore", windowsHide: true, timeout: 5000 },
+    );
+    if (probe.status === 0) richLoggerCommand = python;
+  } catch (error) {
+    richLoggerCommand = null;
+  }
+  return richLoggerCommand;
+}
+
+function logViaRich(payload) {
+  const python = richLoggerCommand;
+  if (!python) return false;
+  try {
+    const child = spawn(python, [RICH_LOG_SCRIPT], {
+      stdio: ["pipe", "inherit", "inherit"],
+      windowsHide: true,
+    });
+    child.on("error", () => {});
+    child.stdin.on("error", () => {});
+    child.stdin.end(JSON.stringify(payload));
+    return true;
+  } catch (error) {
+    return false;
+  }
+}
+
 function formatCommandForLog(command) {
   return command
     .split("\n")
@@ -184,11 +232,22 @@ function formatCommandForLog(command) {
 }
 
 function logCommandStart({ shell, command, cwd }) {
+  if (logViaRich({ event: "start", shell, command, cwd })) return;
   console.log(`[DS-pwsh] >>> ${shell} (cwd: ${cwd})`);
   console.log(`[DS-pwsh]     ${formatCommandForLog(command)}`);
 }
 
 function logCommandResult({ shell }, result) {
+  if (
+    logViaRich({
+      event: "result",
+      shell,
+      exitCode: result?.exitCode ?? null,
+      signal: result?.signal ?? null,
+    })
+  ) {
+    return;
+  }
   const code = result?.exitCode ?? "?";
   const signal = result?.signal ? ` signal=${result.signal}` : "";
   console.log(`[DS-pwsh] <<< exit=${code}${signal}`);
@@ -321,6 +380,7 @@ function openBrowser(url) {
 }
 
 if (require.main === module) {
+  setImmediate(() => detectRichLogger());
   const server = createBridgeServer();
   listenOnAvailablePort(server)
     .then((port) => {

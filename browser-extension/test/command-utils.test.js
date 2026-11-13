@@ -16,10 +16,7 @@ test("normalizeCommand removes a leading Markdown list marker", () => {
 });
 
 test("normalizeCommand preserves shell options and later lines", () => {
-  assert.equal(
-    normalizeCommand("echo -n test\nprintf done"),
-    "echo -n test\nprintf done",
-  );
+  assert.equal(normalizeCommand("echo -n test\nprintf done"), "echo -n test\nprintf done");
   assert.equal(normalizeCommand("  echo test"), "echo test");
 });
 
@@ -31,7 +28,7 @@ test("collectCommands finds all supported blocks in message order", () => {
   ];
   const commands = collectCommands(
     blocks,
-    (block) => block.shell === "bash" ? block.shell : "",
+    (block) => (block.shell === "bash" ? block.shell : ""),
     (block) => normalizeCommand(block.command),
   );
 
@@ -50,18 +47,15 @@ test("runSequentially waits for each command and preserves order", async () => {
   let active = 0;
   let maximumActive = 0;
 
-  const results = await runSequentially(
-    ["first", "second", "third"],
-    async (item) => {
-      active += 1;
-      maximumActive = Math.max(maximumActive, active);
-      calls.push(`start:${item}`);
-      await new Promise((resolve) => setTimeout(resolve, 5));
-      calls.push(`end:${item}`);
-      active -= 1;
-      return `${item}-result`;
-    },
-  );
+  const results = await runSequentially(["first", "second", "third"], async (item) => {
+    active += 1;
+    maximumActive = Math.max(maximumActive, active);
+    calls.push(`start:${item}`);
+    await new Promise((resolve) => setTimeout(resolve, 5));
+    calls.push(`end:${item}`);
+    active -= 1;
+    return `${item}-result`;
+  });
 
   assert.equal(maximumActive, 1);
   assert.deepEqual(calls, [
@@ -72,11 +66,10 @@ test("runSequentially waits for each command and preserves order", async () => {
     "start:third",
     "end:third",
   ]);
-  assert.deepEqual(results.map(({ result }) => result), [
-    "first-result",
-    "second-result",
-    "third-result",
-  ]);
+  assert.deepEqual(
+    results.map(({ result }) => result),
+    ["first-result", "second-result", "third-result"],
+  );
 });
 
 test("runSequentially continues after an individual command fails", async () => {

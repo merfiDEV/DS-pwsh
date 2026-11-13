@@ -35,7 +35,7 @@ jobs:
           node-version: 20
       - run: npm install
       - name: Build Ubuntu executable
-        run: npx pkg bridge/host.js --targets node20-linux-x64 --out-path dist
+        run: npx pkg bridge/host.js --targets node18-linux-x64 --out-path dist
       - name: Rename artifact
         shell: bash
         run: |
@@ -65,7 +65,7 @@ jobs:
       - name: Install dependencies
         run: npm install
       - name: Build Arch Linux executable
-        run: npx pkg bridge/host.js --targets node20-linux-x64 --out-path dist
+        run: npx pkg bridge/host.js --targets node18-linux-x64 --out-path dist
       - name: Rename artifact
         shell: bash
         run: |
@@ -91,7 +91,7 @@ jobs:
           node-version: 20
       - run: npm install
       - name: Build Windows executable
-        run: npx pkg bridge/host.js --targets node20-win-x64 --out-path dist
+        run: npx pkg bridge/host.js --targets node18-win-x64 --out-path dist
       - name: Rename artifact
         shell: bash
         run: |

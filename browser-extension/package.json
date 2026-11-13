@@ -24,7 +24,7 @@
   "devDependencies": {
     "eslint": "^9.15.0",
     "prettier": "^3.4.0",
-    "@yao-pkg/pkg": "^6.25.0"
+    "pkg": "5.8.1"
   },
   "files": [
     "bridge/host.js",
@@ -46,8 +46,8 @@
       "bridge/rich-log.py"
     ],
     "targets": [
-      "node20-linux-x64",
-      "node20-win-x64"
+      "node18-linux-x64",
+      "node18-win-x64"
     ],
     "outputPath": "dist"
   }

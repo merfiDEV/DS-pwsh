@@ -279,13 +279,13 @@ function openBrowser(url) {
   let command;
   let args;
   if (platform === "win32") {
-    command = "cmd";
-    args = ["/c", "start", "", url];
+    command = process.env.ComSpec || "cmd.exe";
+    args = ["/d", "/s", "/c", "start", "", url];
   } else if (platform === "darwin") {
     command = "open";
     args = [url];
   } else {
-    command = "xdg-open";
+    command = process.env.DS_PWSH_OPEN_CMD || "xdg-open";
     args = [url];
   }
   try {
@@ -293,13 +293,16 @@ function openBrowser(url) {
       detached: true,
       stdio: "ignore",
       windowsHide: true,
+      windowsVerbatimArguments: platform === "win32",
     });
     child.on("error", (error) => {
-      console.warn(`[DS-pwsh] Could not open browser: ${error.message}`);
+      console.warn(
+        `[DS-pwsh] Could not open browser via ${command}: ${error.message}`,
+      );
     });
     child.unref();
   } catch (error) {
-    console.warn(`[DS-pwsh] Could not open browser: ${error.message}`);
+    console.warn(`[DS-pwsh] Could not open browser via ${command}: ${error.message}`);
   }
 }
 

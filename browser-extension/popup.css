@@ -90,3 +90,9 @@ dialog p { margin-bottom: 16px; color: #aaa; font-size: 12px; }
 
 #notice { min-height: 16px; color: #999; font-size: 11px; }
 #notice.error { color: #cc7777; }
+
+.hint {
+  margin: 4px 0 0;
+  font-size: 12px;
+  opacity: 0.7;
+}

@@ -46,17 +46,26 @@ async function loadOptions() {
     autoRun: true,
     confirmCommands: true,
     projectDir: "",
+    sendDelayMs: 5000,
   });
   document.getElementById("auto-run").checked = options.autoRun === true;
   document.getElementById("confirm-commands").checked =
     options.confirmCommands === true;
   document.getElementById("project-dir").value = options.projectDir || "";
+  const delaySeconds = Math.round((Number(options.sendDelayMs) || 0) / 1000);
+  document.getElementById("send-delay").value = String(delaySeconds);
 }
 
 async function saveSettings({ includeProjectDir = false } = {}) {
+  const rawDelay = Number(document.getElementById("send-delay").value);
+  const clampedDelaySeconds = Number.isFinite(rawDelay)
+    ? Math.min(180, Math.max(0, Math.round(rawDelay)))
+    : 5;
+  document.getElementById("send-delay").value = String(clampedDelaySeconds);
   const values = {
     autoRun: document.getElementById("auto-run").checked,
     confirmCommands: document.getElementById("confirm-commands").checked,
+    sendDelayMs: clampedDelaySeconds * 1000,
   };
   if (includeProjectDir) {
     values.projectDir = document.getElementById("project-dir").value.trim();
@@ -103,7 +112,7 @@ document.getElementById("save").addEventListener("click", async () => {
   }
 });
 
-for (const id of ["auto-run", "confirm-commands"]) {
+for (const id of ["auto-run", "confirm-commands", "send-delay"]) {
   document.getElementById(id).addEventListener("change", async () => {
     try {
       await saveSettings();

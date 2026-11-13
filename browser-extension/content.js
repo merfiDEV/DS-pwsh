@@ -11,6 +11,20 @@
   let awaitingNewUserMessage = false;
   let lastUserMessage = null;
   let pendingUserText = "";
+  const DEFAULT_SEND_DELAY_MS = 5000;
+
+  async function getSendDelayMs() {
+    try {
+      const storage = globalThis.chrome?.storage || globalThis.browser?.storage;
+      if (!storage?.local?.get) return DEFAULT_SEND_DELAY_MS;
+      const options = await storage.local.get({ sendDelayMs: DEFAULT_SEND_DELAY_MS });
+      const value = Number(options.sendDelayMs);
+      if (!Number.isFinite(value)) return DEFAULT_SEND_DELAY_MS;
+      return Math.min(180_000, Math.max(0, Math.round(value)));
+    } catch (error) {
+      return DEFAULT_SEND_DELAY_MS;
+    }
+  }
 
   const inputSelectors = [
     'textarea[placeholder*="message" i]',
@@ -331,7 +345,19 @@
       return;
     }
 
-    submitPendingResult(result);
+    if (result.cooldownStarted) return;
+    result.cooldownStarted = true;
+    const remainingMs = Math.max(0, (result.readyAt || 0) - Date.now());
+    if (remainingMs === 0) {
+      submitPendingResult(result);
+      return;
+    }
+    const seconds = Math.ceil(remainingMs / 1000);
+    showToast(`Кулдаун: отправка через ${seconds} с…`);
+    setTimeout(() => {
+      result.cooldownStarted = false;
+      deliverPendingResults();
+    }, remainingMs);
   }
 
   function submitPendingResult(result, attempt = 0) {
@@ -607,9 +633,11 @@
     }));
     const summary = summarizeResults(formattedResults);
     showToast(`Готово: ${commands.length} команд. ${summary}`);
+    const delayMs = await getSendDelayMs();
     pendingResults.push({
       message: globalThis.DSPwshCommandUtils.formatResults(formattedResults),
       summary,
+      readyAt: Date.now() + delayMs,
     });
     deliverPendingResults();
   }

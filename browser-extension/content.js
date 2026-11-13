@@ -20,7 +20,8 @@
       if (storage?.local?.get) {
         const options = await storage.local.get({ sendDelayMs: DEFAULT_SEND_DELAY_MS });
         const value = Number(options.sendDelayMs);
-        if (Number.isFinite(value)) configuredDelay = Math.min(180_000, Math.max(0, Math.round(value)));
+        if (Number.isFinite(value))
+          configuredDelay = Math.min(180_000, Math.max(0, Math.round(value)));
       }
     } catch {}
 
@@ -102,9 +103,9 @@
         current.getAttribute?.("data-message-type") ||
         "";
       if (/user|human/i.test(role)) return true;
-      const className =
-        typeof current.className === "string" ? current.className : "";
-      if (/(?:^|[-_\s])(?:user|human)(?:$|[-_\s])|user-message|message-user/i.test(className)) return true;
+      const className = typeof current.className === "string" ? current.className : "";
+      if (/(?:^|[-_\s])(?:user|human)(?:$|[-_\s])|user-message|message-user/i.test(className))
+        return true;
       current = current.parentElement;
     }
     const text = (node.textContent || node.innerText || "").slice(0, 200);
@@ -138,7 +139,8 @@
         awaitingNewUserMessage &&
         pendingUserText.length > 3 &&
         (message.textContent || "").includes(pendingUserText);
-      if ((!isUserMessage(message) && !matchesPendingText) || knownUserMessages.has(message)) continue;
+      if ((!isUserMessage(message) && !matchesPendingText) || knownUserMessages.has(message))
+        continue;
       knownUserMessages.add(message);
       lastUserMessage = message;
       awaitingAssistant = true;
@@ -195,10 +197,12 @@
   function latestAssistantMessage() {
     const messages = messageElements();
     const lastUserIndex = lastUserMessage ? messages.indexOf(lastUserMessage) : -1;
-    return messages
-      .slice(lastUserIndex + 1)
-      .filter((message) => !isUserMessage(message))
-      .at(-1) || null;
+    return (
+      messages
+        .slice(lastUserIndex + 1)
+        .filter((message) => !isUserMessage(message))
+        .at(-1) || null
+    );
   }
 
   function blockSignature(root) {
@@ -221,8 +225,9 @@
     ).filter((block) => block.querySelector("code"));
     if (markdownBlocks.length) return markdownBlocks;
 
-    return Array.from(root.querySelectorAll("[data-language], [data-lang]"))
-      .filter((block) => block.querySelector("code"));
+    return Array.from(root.querySelectorAll("[data-language], [data-lang]")).filter((block) =>
+      block.querySelector("code"),
+    );
   }
 
   function parseLatestAssistantResponse() {
@@ -234,11 +239,7 @@
     const blocks = getCodeBlocks(message).filter(
       (block) => !isUserMessage(block) && !handledBlocks.has(block),
     );
-    const commands = globalThis.DSPwshCommandUtils.collectCommands(
-      blocks,
-      getShell,
-      getCommand,
-    );
+    const commands = globalThis.DSPwshCommandUtils.collectCommands(blocks, getShell, getCommand);
     if (!commands.length) {
       return {
         ok: false,
@@ -280,13 +281,9 @@
         return;
       }
 
-      const blocks = message
-        ? getCodeBlocks(message)
-        : [pre];
+      const blocks = message ? getCodeBlocks(message) : [pre];
       const commands = globalThis.DSPwshCommandUtils.collectCommands(
-        blocks.filter(
-          (block) => !handledBlocks.has(block) && !isUserMessage(block),
-        ),
+        blocks.filter((block) => !handledBlocks.has(block) && !isUserMessage(block)),
         getShell,
         getCommand,
       );
@@ -318,21 +315,19 @@
     const input = findInput();
     if (!input) return null;
     const form = input.closest("form");
-    const formSubmit = form?.querySelector(
-      'button[type="submit"], input[type="submit"]',
-    );
+    const formSubmit = form?.querySelector('button[type="submit"], input[type="submit"]');
     if (formSubmit && isAvailable(formSubmit)) return formSubmit;
 
     let scope = input.parentElement;
     for (let depth = 0; scope && depth < 8; depth += 1) {
-      const labelledControls = Array.from(
-        scope.querySelectorAll(sendSelectors.join(",")),
-      ).filter(isAvailable);
+      const labelledControls = Array.from(scope.querySelectorAll(sendSelectors.join(","))).filter(
+        isAvailable,
+      );
       if (labelledControls.length) return labelledControls.at(-1);
 
-      const controls = Array.from(
-        scope.querySelectorAll(actionControlSelector),
-      ).filter(isAvailable);
+      const controls = Array.from(scope.querySelectorAll(actionControlSelector)).filter(
+        isAvailable,
+      );
       if (controls.length > 0 && controls.length <= 3) {
         return controls.at(-1);
       }
@@ -354,14 +349,13 @@
       input.focus();
       input.replaceChildren(document.createTextNode(value));
     } else {
-      const setter = Object.getOwnPropertyDescriptor(
-        Object.getPrototypeOf(input),
-        "value",
-      )?.set;
+      const setter = Object.getOwnPropertyDescriptor(Object.getPrototypeOf(input), "value")?.set;
       if (!setter) throw new Error("Could not update DeepSeek's message field.");
       setter.call(input, value);
     }
-    input.dispatchEvent(new InputEvent("input", { bubbles: true, inputType: "insertText", data: value }));
+    input.dispatchEvent(
+      new InputEvent("input", { bubbles: true, inputType: "insertText", data: value }),
+    );
     input.dispatchEvent(new Event("change", { bubbles: true }));
   }
 
@@ -369,8 +363,11 @@
     const expected = result.message.trim().replace(/\s+/g, " ");
     return Array.from(document.querySelectorAll(".ds-message"))
       .filter(isUserMessage)
-      .some((node) => !result.existingUserMessages.has(node) &&
-        (node.innerText || node.textContent || "").trim().replace(/\s+/g, " ") === expected);
+      .some(
+        (node) =>
+          !result.existingUserMessages.has(node) &&
+          (node.innerText || node.textContent || "").trim().replace(/\s+/g, " ") === expected,
+      );
   }
 
   function finishPendingResult(result, notice) {
@@ -490,7 +487,10 @@
       } catch (error) {
         result.delivering = false;
         result.retryAt = Date.now() + 5000;
-        showToast(`Не удалось нажать отправку: ${error.message || String(error)}. Результат остаётся в очереди.`, true);
+        showToast(
+          `Не удалось нажать отправку: ${error.message || String(error)}. Результат остаётся в очереди.`,
+          true,
+        );
         setTimeout(() => {
           result.retryAt = 0;
           deliverPendingResults();
@@ -520,7 +520,10 @@
 
       result.delivering = false;
       result.retryAt = Date.now() + 5000;
-      showToast("Не удалось подтвердить отправку. Результат оставлен в поле и будет повторен.", true);
+      showToast(
+        "Не удалось подтвердить отправку. Результат оставлен в поле и будет повторен.",
+        true,
+      );
       setTimeout(() => {
         result.retryAt = 0;
         deliverPendingResults();
@@ -532,9 +535,7 @@
     return results
       .map(({ result, error }, index) => {
         if (error) return `#${index + 1}: error`;
-        const output = (result.output || "(no output)")
-          .replace(/\s+/g, " ")
-          .trim();
+        const output = (result.output || "(no output)").replace(/\s+/g, " ").trim();
         const excerpt = output.length > 100 ? `${output.slice(0, 100)}…` : output;
         return `#${index + 1}: code ${result.exitCode}, ${excerpt}`;
       })
@@ -628,11 +629,7 @@
       let settled = false;
       const timeout = setTimeout(() => {
         settled = true;
-        reject(
-          new Error(
-            `Команда ${index} из ${total}: мост не ответил за 260 секунд.`,
-          ),
-        );
+        reject(new Error(`Команда ${index} из ${total}: мост не ответил за 260 секунд.`));
       }, COMMAND_RESPONSE_TIMEOUT_MS);
 
       try {
@@ -686,8 +683,7 @@
 
     let confirmCommands;
     try {
-      const storage =
-        globalThis.chrome?.storage || globalThis.browser?.storage;
+      const storage = globalThis.chrome?.storage || globalThis.browser?.storage;
       if (!storage?.local?.get) {
         throw new Error("Настройки подтверждения недоступны.");
       }
@@ -704,15 +700,10 @@
     const results = await globalThis.DSPwshCommandUtils.runSequentially(
       commands,
       async (block, index, total) => {
-        if (
-          confirmCommands &&
-          !(await confirmCommand(block, index, total))
-        ) {
+        if (confirmCommands && !(await confirmCommand(block, index, total))) {
           throw new Error("Пропущено пользователем; команда не запускалась.");
         }
-        showToast(
-          `Выполняется команда ${index}/${total} (${block.shell})…`,
-        );
+        showToast(`Выполняется команда ${index}/${total} (${block.shell})…`);
         return sendCommand(runtime, block, index, total);
       },
     );
@@ -784,9 +775,9 @@
         const form = input?.closest("form");
         let clickedComposerControl = Boolean(
           input &&
-            clickedControl &&
-            form &&
-            (form === clickedControl || form.contains(clickedControl)),
+          clickedControl &&
+          form &&
+          (form === clickedControl || form.contains(clickedControl)),
         );
         let scope = input?.parentElement;
         for (let depth = 0; scope && depth < 6 && !clickedComposerControl; depth += 1) {
@@ -794,10 +785,7 @@
           scope = scope.parentElement;
         }
         const inferredSendControl =
-          input &&
-          getInputText(input).trim() &&
-          clickedControl &&
-          clickedComposerControl;
+          input && getInputText(input).trim() && clickedControl && clickedComposerControl;
         if (!inferredSendControl) {
           return;
         }
@@ -815,9 +803,7 @@
     for (const mutation of mutations) {
       for (const node of mutation.addedNodes) scanNode(node);
       const target =
-        mutation.target instanceof Element
-          ? mutation.target
-          : mutation.target.parentElement;
+        mutation.target instanceof Element ? mutation.target : mutation.target.parentElement;
       if (target) scanNode(target, false);
     }
     deliverPendingResults();
@@ -842,10 +828,14 @@
   }, 700);
 
   document.addEventListener("click", onUserSend, true);
-  document.addEventListener("submit", () => {
-    awaitingAssistant = true;
-    awaitingNewUserMessage = true;
-  }, true);
+  document.addEventListener(
+    "submit",
+    () => {
+      awaitingAssistant = true;
+      awaitingNewUserMessage = true;
+    },
+    true,
+  );
   document.addEventListener("keydown", onUserSend, true);
   document.addEventListener("input", deliverPendingResults, true);
 
@@ -855,9 +845,7 @@
       throw new Error("Открой чат DeepSeek, который нужно удалить.");
     }
 
-    const link = Array.from(
-      document.querySelectorAll('a[href*="/a/chat/s/"]'),
-    ).find((anchor) => {
+    const link = Array.from(document.querySelectorAll('a[href*="/a/chat/s/"]')).find((anchor) => {
       try {
         return new URL(anchor.href).pathname.endsWith(`/a/chat/s/${sessionId}`);
       } catch {
@@ -888,9 +876,9 @@
 
     for (let attempt = 0; attempt < 20; attempt += 1) {
       await wait(250);
-      const stillListed = Array.from(
-        document.querySelectorAll('a[href*="/a/chat/s/"]'),
-      ).some((anchor) => anchor.href.includes(`/a/chat/s/${sessionId}`));
+      const stillListed = Array.from(document.querySelectorAll('a[href*="/a/chat/s/"]')).some(
+        (anchor) => anchor.href.includes(`/a/chat/s/${sessionId}`),
+      );
       if (!stillListed) return { ok: true };
     }
     throw new Error("DeepSeek не подтвердил удаление чата.");

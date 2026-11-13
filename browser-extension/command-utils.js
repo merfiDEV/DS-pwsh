@@ -38,10 +38,7 @@
     const formatted = results
       .map(({ shell, result, error }, index) => {
         if (error) {
-          return [
-            `[DS-pwsh terminal: command ${index + 1}, ${shell}, error]`,
-            error,
-          ].join("\n");
+          return [`[DS-pwsh terminal: command ${index + 1}, ${shell}, error]`, error].join("\n");
         }
         const code = Number.isInteger(result.exitCode) ? result.exitCode : 1;
         const rawOutput = result.output || "(no output)";

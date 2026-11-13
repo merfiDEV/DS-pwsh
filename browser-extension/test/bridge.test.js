@@ -4,7 +4,7 @@ const assert = require("node:assert/strict");
 const net = require("node:net");
 const os = require("node:os");
 const path = require("node:path");
-const { after, before, test } = require("node:test");
+const { test } = require("node:test");
 const {
   createBridgeServer,
   configuredMinimumSendDelay,
@@ -42,18 +42,9 @@ test("minimum send delay defaults to zero and accepts bounded settings", () => {
   assert.equal(configuredMinimumSendDelay("0"), 0);
   assert.equal(configuredMinimumSendDelay("7500"), 7_500);
   assert.equal(configuredMinimumSendDelay("180000"), 180_000);
-  assert.throws(
-    () => configuredMinimumSendDelay("-1"),
-    /must be an integer from 0/,
-  );
-  assert.throws(
-    () => configuredMinimumSendDelay("not-a-number"),
-    /must be an integer from 0/,
-  );
-  assert.throws(
-    () => configuredMinimumSendDelay("180001"),
-    /must be an integer from 0/,
-  );
+  assert.throws(() => configuredMinimumSendDelay("-1"), /must be an integer from 0/);
+  assert.throws(() => configuredMinimumSendDelay("not-a-number"), /must be an integer from 0/);
+  assert.throws(() => configuredMinimumSendDelay("180001"), /must be an integer from 0/);
 });
 
 test("execution rejects a mismatched shell and invalid working directory", () => {
@@ -68,7 +59,11 @@ test("execution rejects a mismatched shell and invalid working directory", () =>
   assert.throws(
     () =>
       validateExecutionRequest(
-        { shell: "bash", command: "echo no", cwd: path.join(os.tmpdir(), "missing-cookie-project") },
+        {
+          shell: "bash",
+          command: "echo no",
+          cwd: path.join(os.tmpdir(), "missing-cookie-project"),
+        },
         { platform: "linux" },
       ),
     /Working directory does not exist/,

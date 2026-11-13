@@ -1,8 +1,6 @@
 function buildInstruction(platform, confirmCommands) {
   const isWindows = platform === "win32";
-  const availableShells = isWindows
-    ? "cmd.exe и PowerShell (pwsh)"
-    : "bash";
+  const availableShells = isWindows ? "cmd.exe и PowerShell (pwsh)" : "bash";
   const codeFence = isWindows ? "pwsh" : "bash";
   const windowsNote = isWindows
     ? "Расширение выполняет команды из блоков pwsh; если нужна команда cmd.exe, запускай её через cmd.exe /c внутри PowerShell."
@@ -36,8 +34,7 @@ async function getPlatform() {
   } catch (error) {
     console.warn("Could not read the bridge platform; using browser platform.", error);
   }
-  const browserPlatform =
-    navigator.userAgentData?.platform || navigator.platform || "";
+  const browserPlatform = navigator.userAgentData?.platform || navigator.platform || "";
   return /^win/i.test(browserPlatform) ? "win32" : "linux";
 }
 
@@ -49,8 +46,7 @@ async function loadOptions() {
     sendDelayMs: 5000,
   });
   document.getElementById("auto-run").checked = options.autoRun === true;
-  document.getElementById("confirm-commands").checked =
-    options.confirmCommands === true;
+  document.getElementById("confirm-commands").checked = options.confirmCommands === true;
   document.getElementById("project-dir").value = options.projectDir || "";
   const delaySeconds = Math.round((Number(options.sendDelayMs) || 0) / 1000);
   document.getElementById("send-delay").value = String(delaySeconds);
@@ -97,8 +93,7 @@ async function updateBridgeStatus() {
   } catch (error) {
     if (dot) dot.className = "status-dot offline";
     title.textContent = "Нет подключения к мосту";
-    detail.textContent =
-      error?.message || "Запустите локальный bridge из папки проекта.";
+    detail.textContent = error?.message || "Запустите локальный bridge из папки проекта.";
   }
 }
 
@@ -123,20 +118,16 @@ for (const id of ["auto-run", "confirm-commands", "send-delay"]) {
   });
 }
 
-document
-  .getElementById("copy-instructions")
-  .addEventListener("click", async () => {
-    try {
-      const platform = await getPlatform();
-      const confirmCommands = document.getElementById("confirm-commands").checked;
-      await navigator.clipboard.writeText(
-        buildInstruction(platform, confirmCommands),
-      );
-      showNotice("Инструкция скопирована. Вставьте её в чат DeepSeek.");
-    } catch (error) {
-      showNotice(`Не удалось скопировать инструкцию: ${error.message || String(error)}`, true);
-    }
-  });
+document.getElementById("copy-instructions").addEventListener("click", async () => {
+  try {
+    const platform = await getPlatform();
+    const confirmCommands = document.getElementById("confirm-commands").checked;
+    await navigator.clipboard.writeText(buildInstruction(platform, confirmCommands));
+    showNotice("Инструкция скопирована. Вставьте её в чат DeepSeek.");
+  } catch (error) {
+    showNotice(`Не удалось скопировать инструкцию: ${error.message || String(error)}`, true);
+  }
+});
 
 const deleteDialog = document.getElementById("delete-confirm");
 document.getElementById("parse-last-response").addEventListener("click", async (event) => {
@@ -147,9 +138,14 @@ document.getElementById("parse-last-response").addEventListener("click", async (
     if (!tab?.id) throw new Error("Не найдена активная вкладка браузера.");
     const response = await chrome.tabs.sendMessage(tab.id, { type: "PARSE_LAST_RESPONSE" });
     if (!response?.ok) throw new Error(response?.error || "Последний ответ не разобран.");
-    showNotice(`Найдено команд: ${response.count}. Применяются настройки подтверждения и автозапуска.`);
+    showNotice(
+      `Найдено команд: ${response.count}. Применяются настройки подтверждения и автозапуска.`,
+    );
   } catch (error) {
-    showNotice(`${error.message || String(error)} Проверь, что открыта вкладка DeepSeek и обнови её.`, true);
+    showNotice(
+      `${error.message || String(error)} Проверь, что открыта вкладка DeepSeek и обнови её.`,
+      true,
+    );
   } finally {
     button.disabled = false;
   }
@@ -173,7 +169,10 @@ document.getElementById("confirm-delete").addEventListener("click", async (event
     deleteDialog.close();
     showNotice("Чат удалён из истории DeepSeek.");
   } catch (error) {
-    showNotice(`${error.message || String(error)} Проверь, что открыта вкладка DeepSeek, затем перезагрузи её.`, true);
+    showNotice(
+      `${error.message || String(error)} Проверь, что открыта вкладка DeepSeek, затем перезагрузи её.`,
+      true,
+    );
   } finally {
     button.disabled = false;
   }

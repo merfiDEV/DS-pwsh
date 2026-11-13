@@ -12,8 +12,7 @@ async function getOptions() {
   });
   return {
     autoRun: options.autoRun === true,
-    projectDir:
-      typeof options.projectDir === "string" ? options.projectDir.trim() : "",
+    projectDir: typeof options.projectDir === "string" ? options.projectDir.trim() : "",
   };
 }
 
@@ -38,9 +37,7 @@ async function probeBridge(port) {
     });
     if (!response.ok) return null;
     const status = await response.json();
-    return status.service === "ds-pwsh-terminal-bridge"
-      ? { port, status }
-      : null;
+    return status.service === "ds-pwsh-terminal-bridge" ? { port, status } : null;
   } catch {
     return null;
   }
@@ -64,9 +61,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message?.type === "GET_BRIDGE_STATUS") {
     getBridgeStatus()
       .then((status) => sendResponse({ ok: true, status }))
-      .catch((error) =>
-        sendResponse({ ok: false, error: error.message || String(error) }),
-      );
+      .catch((error) => sendResponse({ ok: false, error: error.message || String(error) }));
     return true;
   }
 
@@ -123,9 +118,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       return { ok: true, result };
     })
     .then(sendResponse)
-    .catch((error) =>
-      sendResponse({ ok: false, error: error.message || String(error) }),
-    );
+    .catch((error) => sendResponse({ ok: false, error: error.message || String(error) }));
 
   return true;
 });

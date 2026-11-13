@@ -99,7 +99,6 @@ extension's Chrome origin and rejects shells that do not match the host OS. The
 extension injects only on `chat.deepseek.com`. The popup's **Закончить сессию**
 action removes the open chat from the DeepSeek sidebar after a second confirmation.
 
-
 ## Prebuilt binaries
 
 Every push to `main` (and every `v*` tag) builds standalone executables of the
@@ -117,8 +116,8 @@ bundled - load `browser-extension/` unpacked in Chrome as usual.
 
 ## Screenshots
 
-| Popup | Rich console log |
-| --- | --- |
+| Popup                        | Rich console log                |
+| ---------------------------- | ------------------------------- |
 | _TODO: add `docs/popup.png`_ | _TODO: add `docs/rich-log.png`_ |
 
 ## Links

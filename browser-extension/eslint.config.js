@@ -2,14 +2,7 @@
 
 module.exports = [
   {
-    ignores: [
-      "node_modules/",
-      "bridge/.rich-venv/",
-      "dist/",
-      "build/",
-      "release/",
-      "**/*.min.js",
-    ],
+    ignores: ["node_modules/", "bridge/.rich-venv/", "dist/", "build/", "release/", "**/*.min.js"],
   },
   {
     files: ["**/*.js"],
@@ -31,6 +24,8 @@ module.exports = [
         clearTimeout: "readonly",
         setInterval: "readonly",
         clearInterval: "readonly",
+        setImmediate: "readonly",
+        clearImmediate: "readonly",
         fetch: "readonly",
         AbortSignal: "readonly",
         URL: "readonly",

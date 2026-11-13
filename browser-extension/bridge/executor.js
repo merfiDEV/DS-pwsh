@@ -3,11 +3,7 @@
 const { spawn } = require("node:child_process");
 const fs = require("node:fs");
 const path = require("node:path");
-const {
-  COMMAND_TIMEOUT_MS,
-  MAX_COMMAND_LENGTH,
-  MAX_OUTPUT_BYTES,
-} = require("./config");
+const { COMMAND_TIMEOUT_MS, MAX_COMMAND_LENGTH, MAX_OUTPUT_BYTES } = require("./config");
 
 function shellForPlatform(platform) {
   return platform === "win32" ? "pwsh" : "bash";

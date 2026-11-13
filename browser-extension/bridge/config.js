@@ -15,11 +15,7 @@ const DEEPSEEK_URL = "https://chat.deepseek.com/";
 function configuredMinimumSendDelay(value = process.env.DS_PWSH_MIN_SEND_DELAY_MS) {
   if (value === undefined || value === "") return DEFAULT_MINIMUM_SEND_DELAY_MS;
   const delayMs = Number(value);
-  if (
-    !Number.isSafeInteger(delayMs) ||
-    delayMs < 0 ||
-    delayMs > MAXIMUM_SEND_DELAY_MS
-  ) {
+  if (!Number.isSafeInteger(delayMs) || delayMs < 0 || delayMs > MAXIMUM_SEND_DELAY_MS) {
     throw new Error(
       `DS_PWSH_MIN_SEND_DELAY_MS must be an integer from 0 to ${MAXIMUM_SEND_DELAY_MS}.`,
     );

@@ -405,15 +405,28 @@
       setTimeout(() => deliverPendingResults(), result.retryAt - Date.now());
       return;
     }
-    if (!input || (getInputText(input).trim() && getInputText(input) !== result.message)) {
+    if (!input) {
       if (!result.waitingNotified) {
         result.waitingNotified = true;
         showToast(
-          `${input ? "Команда выполнена, но поле чата занято" : "Команда выполнена, но поле чата не найдено"}. ${result.summary} Результат сохранён для отправки.`,
+          `Команда выполнена, но поле чата не найдено. ${result.summary} Результат сохранён для отправки.`,
           true,
         );
       }
       return;
+    }
+
+    const currentText = getInputText(input);
+    if (currentText.trim() && currentText !== result.message) {
+      // Поле уже содержит другой текст — добавляем результат к нему вместо ожидания.
+      const merged = `${currentText.replace(/\s+$/, "")}\n${result.message}`;
+      try {
+        setInputText(input, merged);
+      } catch (error) {
+        showToast(error.message || String(error), true);
+        return;
+      }
+      result.message = merged;
     }
 
     if (getInputText(input) !== result.message) {

@@ -32,6 +32,16 @@ on Linux/macOS.
    uv pip install --python .rich-venv/bin/python rich
    ```
 
+   On Windows, install Python 3.8+ and [uv](https://docs.astral.sh/uv/) first
+   (for example `winget install Python.Python.3.12` and
+   `winget install astral-sh.uv`), then run from PowerShell:
+
+   ```pwsh
+   cd C:\path\to\DS-pwsh\browser-extension\bridge
+   uv venv .rich-venv
+   uv pip install --python .rich-venv\Scripts\python.exe rich
+   ```
+
    The virtualenv is git-ignored. If Rich is not installed, the bridge falls
    back to plain `[DS-pwsh] >>> ...` text logs. Set `DS_PWSH_NO_RICH=1` to force
    plain logs, or `DS_PWSH_PYTHON=/path/to/python` to point at another
@@ -52,8 +62,8 @@ on Linux/macOS.
    ```
 
    In PowerShell, set `$env:DS_PWSH_MIN_SEND_DELAY_MS = "10000"` before running
-   `node`. The setting applies on the bridge server and is combined with the
-   delay configured in the extension popup.
+   `node`. The value is reported by the bridge `/health` endpoint for
+   diagnostics; the actual pause before results are sent is configured in the
 
 2. In Chrome, open `chrome://extensions`, enable **Developer mode**, choose
    **Load unpacked**, and select this `browser-extension` directory.
@@ -87,3 +97,15 @@ port needs to be configured manually. The bridge accepts requests only from the
 extension's Chrome origin and rejects shells that do not match the host OS. The
 extension injects only on `chat.deepseek.com`. The popup's **Закончить сессию**
 action removes the open chat from the DeepSeek sidebar after a second confirmation.
+
+## Screenshots
+
+| Popup | Rich console log |
+| --- | --- |
+| _TODO: add `docs/popup.png`_ | _TODO: add `docs/rich-log.png`_ |
+
+## Links
+
+- [CHANGELOG](../CHANGELOG.md)
+- [License (MIT)](../LICENSE)
+- [Rich](https://github.com/Textualize/rich) - console formatting used by the bridge

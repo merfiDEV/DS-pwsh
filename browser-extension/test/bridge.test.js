@@ -37,21 +37,22 @@ test("shell matches the operating system", () => {
   assert.equal(shellForPlatform("darwin"), "bash");
 });
 
-test("minimum send delay defaults to five seconds and rejects lower settings", () => {
-  assert.equal(configuredMinimumSendDelay(undefined), 5_000);
+test("minimum send delay defaults to zero and accepts bounded settings", () => {
+  assert.equal(configuredMinimumSendDelay(undefined), 0);
+  assert.equal(configuredMinimumSendDelay("0"), 0);
   assert.equal(configuredMinimumSendDelay("7500"), 7_500);
   assert.equal(configuredMinimumSendDelay("180000"), 180_000);
   assert.throws(
-    () => configuredMinimumSendDelay("4999"),
-    /must be an integer from 5000/,
+    () => configuredMinimumSendDelay("-1"),
+    /must be an integer from 0/,
   );
   assert.throws(
     () => configuredMinimumSendDelay("not-a-number"),
-    /must be an integer from 5000/,
+    /must be an integer from 0/,
   );
   assert.throws(
     () => configuredMinimumSendDelay("180001"),
-    /must be an integer from 5000/,
+    /must be an integer from 0/,
   );
 });
 
@@ -186,7 +187,7 @@ test("bridge executes a command and returns its output", async (t) => {
   });
 });
 
-test("bridge waits for the configured delay before sending command results", async (t) => {
+test("bridge returns command results immediately and exposes the client send delay", async (t) => {
   const server = createBridgeServer({
     platform: "linux",
     defaultCwd: process.cwd(),
@@ -194,6 +195,11 @@ test("bridge waits for the configured delay before sending command results", asy
   });
   const port = await listen(server);
   t.after(() => close(server));
+
+  const health = await fetch(`http://127.0.0.1:${port}/health`, {
+    headers: { Origin: EXTENSION_ORIGIN },
+  });
+  assert.equal((await health.json()).minimumSendDelayMs, 40);
 
   const startedAt = Date.now();
   const response = await fetch(`http://127.0.0.1:${port}/execute`, {
@@ -206,7 +212,7 @@ test("bridge waits for the configured delay before sending command results", asy
   });
 
   assert.equal(response.status, 200);
-  assert.ok(Date.now() - startedAt >= 35, "bridge should delay the result response");
+  assert.ok(Date.now() - startedAt < 35, "bridge should not hold the command response");
   assert.equal((await response.json()).output, "delayed");
 });
 

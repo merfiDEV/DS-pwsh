@@ -20,19 +20,7 @@ async function getOptions() {
 async function findBridge() {
   const probes = [];
   for (let port = PORT_START; port <= PORT_END; port += 1) {
-    probes.push(
-      fetch(`http://127.0.0.1:${port}/health`, {
-        signal: AbortSignal.timeout(1500),
-      })
-        .then(async (response) => {
-          if (!response.ok) return null;
-          const status = await response.json();
-          return status.service === "ds-pwsh-terminal-bridge"
-            ? { port, status }
-            : null;
-        })
-        .catch(() => null),
-    );
+    probes.push(probeBridge(port));
   }
   const results = await Promise.all(probes);
   const bridge = results.find(Boolean);
@@ -41,6 +29,30 @@ async function findBridge() {
   }
   activePort = bridge.port;
   return bridge;
+}
+
+async function probeBridge(port) {
+  try {
+    const response = await fetch(`http://127.0.0.1:${port}/health`, {
+      signal: AbortSignal.timeout(1000),
+    });
+    if (!response.ok) return null;
+    const status = await response.json();
+    return status.service === "ds-pwsh-terminal-bridge"
+      ? { port, status }
+      : null;
+  } catch {
+    return null;
+  }
+}
+
+async function ensureBridge() {
+  if (activePort !== null) {
+    const bridge = await probeBridge(activePort);
+    if (bridge) return bridge;
+    activePort = null;
+  }
+  return findBridge();
 }
 
 async function getBridgeStatus() {
@@ -82,19 +94,27 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         return { ok: false, error: "Automatic command execution is disabled." };
       }
 
-      if (activePort === null) await findBridge();
-      const response = await fetch(`http://127.0.0.1:${activePort}/execute`, {
-        method: "POST",
-        signal: AbortSignal.timeout(BRIDGE_REQUEST_TIMEOUT_MS),
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          shell: message.shell,
-          command: message.command,
-          cwd: options.projectDir || undefined,
-        }),
-      });
+      const bridge = await ensureBridge();
+      let response;
+      try {
+        response = await fetch(`http://127.0.0.1:${bridge.port}/execute`, {
+          method: "POST",
+          signal: AbortSignal.timeout(BRIDGE_REQUEST_TIMEOUT_MS),
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            shell: message.shell,
+            command: message.command,
+            cwd: options.projectDir || undefined,
+          }),
+        });
+      } catch (error) {
+        activePort = null;
+        throw new Error(
+          `Связь с мостом оборвалась: ${error.message || String(error)}. Команда могла выполниться; автоматически не повторяю её, чтобы не запустить второй раз.`,
+        );
+      }
       const result = await response.json();
       if (!response.ok || result.ok !== true) {
         if (response.status >= 500) activePort = null;

@@ -25,17 +25,19 @@ on Linux/macOS.
    `49152-49183` and prints the selected address. Node.js 18 or later is
    required.
 
-   Before starting the bridge, you can increase the minimum delay before
-   command results are returned to DeepSeek. It defaults to 5 seconds and
-   accepts values from 5000 to 180000 milliseconds:
+   Before starting the bridge, you can set a minimum delay before command
+   results are sent to DeepSeek. It defaults to 0 and accepts values from 0 to
+   180000 milliseconds. The bridge returns command output immediately; the
+   extension applies this delay in the browser, so the bridge does not have to
+   hold an open request during the cooldown:
 
    ```sh
    DS_PWSH_MIN_SEND_DELAY_MS=10000 node /path/to/DS-pwsh/browser-extension/bridge/host.js
    ```
 
    In PowerShell, set `$env:DS_PWSH_MIN_SEND_DELAY_MS = "10000"` before running
-   `node`. The setting applies on the bridge server; values below 5000 are
-   rejected.
+   `node`. The setting applies on the bridge server and is combined with the
+   delay configured in the extension popup.
 
 2. In Chrome, open `chrome://extensions`, enable **Developer mode**, choose
    **Load unpacked**, and select this `browser-extension` directory.

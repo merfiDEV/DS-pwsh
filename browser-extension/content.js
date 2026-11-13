@@ -13,17 +13,26 @@
   let pendingUserText = "";
   const DEFAULT_SEND_DELAY_MS = 5000;
 
-  async function getSendDelayMs() {
+  async function getSendDelayMs(runtime) {
+    let configuredDelay = DEFAULT_SEND_DELAY_MS;
     try {
       const storage = globalThis.chrome?.storage || globalThis.browser?.storage;
-      if (!storage?.local?.get) return DEFAULT_SEND_DELAY_MS;
-      const options = await storage.local.get({ sendDelayMs: DEFAULT_SEND_DELAY_MS });
-      const value = Number(options.sendDelayMs);
-      if (!Number.isFinite(value)) return DEFAULT_SEND_DELAY_MS;
-      return Math.min(180_000, Math.max(0, Math.round(value)));
-    } catch (error) {
-      return DEFAULT_SEND_DELAY_MS;
-    }
+      if (storage?.local?.get) {
+        const options = await storage.local.get({ sendDelayMs: DEFAULT_SEND_DELAY_MS });
+        const value = Number(options.sendDelayMs);
+        if (Number.isFinite(value)) configuredDelay = Math.min(180_000, Math.max(0, Math.round(value)));
+      }
+    } catch {}
+
+    let serverMinimum = 0;
+    try {
+      const response = await runtime.sendMessage({ type: "GET_BRIDGE_STATUS" });
+      if (response?.ok) {
+        const value = Number(response.status?.minimumSendDelayMs);
+        if (Number.isFinite(value)) serverMinimum = Math.min(180_000, Math.max(0, value));
+      }
+    } catch {}
+    return Math.max(configuredDelay, serverMinimum);
   }
 
   const inputSelectors = [
@@ -216,6 +225,40 @@
       .filter((block) => block.querySelector("code"));
   }
 
+  function parseLatestAssistantResponse() {
+    const message = latestAssistantMessage();
+    if (!message) {
+      return { ok: false, error: "Не нашёл последний ответ DeepSeek после текущего сообщения." };
+    }
+
+    const blocks = getCodeBlocks(message).filter(
+      (block) => !isUserMessage(block) && !handledBlocks.has(block),
+    );
+    const commands = globalThis.DSPwshCommandUtils.collectCommands(
+      blocks,
+      getShell,
+      getCommand,
+    );
+    if (!commands.length) {
+      return {
+        ok: false,
+        error: blocks.length
+          ? "В последнем ответе нет новых команд pwsh/bash."
+          : "В последнем ответе не найден новый блок pwsh/bash.",
+      };
+    }
+
+    const pending = scheduledMessages.get(message);
+    if (pending) clearTimeout(pending.timer);
+    scheduledMessages.delete(message);
+    for (const { block } of commands) handledBlocks.add(block);
+    handledMessages.add(message);
+    awaitingAssistant = false;
+    awaitingNewUserMessage = false;
+    void executeCommands(commands);
+    return { ok: true, count: commands.length };
+  }
+
   function scheduleBlock(pre) {
     if (!awaitingAssistant || handledBlocks.has(pre) || isUserMessage(pre)) return;
     if (!getShell(pre)) return;
@@ -322,12 +365,35 @@
     input.dispatchEvent(new Event("change", { bubbles: true }));
   }
 
+  function resultIsInChat(result) {
+    const expected = result.message.trim().replace(/\s+/g, " ");
+    return Array.from(document.querySelectorAll(".ds-message"))
+      .filter(isUserMessage)
+      .some((node) => !result.existingUserMessages.has(node) &&
+        (node.innerText || node.textContent || "").trim().replace(/\s+/g, " ") === expected);
+  }
+
+  function finishPendingResult(result, notice) {
+    if (pendingResults[0] === result) pendingResults.shift();
+    result.delivering = false;
+    showToast(notice);
+    deliverPendingResults();
+  }
+
   function deliverPendingResults() {
     if (!pendingResults.length) return;
     const input = findInput();
     const result = pendingResults[0];
     if (result.delivering) return;
-    if (!input || getInputText(input).trim()) {
+    if (resultIsInChat(result)) {
+      finishPendingResult(result, "Результат уже отправлен в чат.");
+      return;
+    }
+    if (result.retryAt > Date.now()) {
+      setTimeout(() => deliverPendingResults(), result.retryAt - Date.now());
+      return;
+    }
+    if (!input || (getInputText(input).trim() && getInputText(input) !== result.message)) {
       if (!result.waitingNotified) {
         result.waitingNotified = true;
         showToast(
@@ -338,11 +404,13 @@
       return;
     }
 
-    try {
-      setInputText(input, result.message);
-    } catch (error) {
-      showToast(error.message || String(error), true);
-      return;
+    if (getInputText(input) !== result.message) {
+      try {
+        setInputText(input, result.message);
+      } catch (error) {
+        showToast(error.message || String(error), true);
+        return;
+      }
     }
 
     if (result.cooldownStarted) return;
@@ -364,9 +432,18 @@
     if (attempt === 0) result.delivering = true;
     setTimeout(() => {
       const input = findInput();
+      if (resultIsInChat(result)) {
+        finishPendingResult(result, "Результат отправлен в чат.");
+        return;
+      }
       if (!input || getInputText(input) !== result.message) {
         result.delivering = false;
-        showToast("Поле ввода изменилось; результат ожидает отправки.", true);
+        result.retryAt = Date.now() + 5000;
+        showToast("Поле ввода изменилось; результат сохранён в очереди.", true);
+        setTimeout(() => {
+          result.retryAt = 0;
+          deliverPendingResults();
+        }, 5000);
         return;
       }
 
@@ -376,7 +453,6 @@
           submitPendingResult(result, attempt + 1);
           return;
         }
-        pendingResults.shift();
         const form = input.closest("form");
         try {
           if (form?.requestSubmit) {
@@ -401,40 +477,55 @@
             );
           }
         } catch (error) {
+          result.delivering = false;
           showToast(error.message || String(error), true);
           return;
         }
-        setTimeout(() => {
-          if (getInputText(input).trim() !== result.message) {
-            showToast("Результат отправлен в чат.");
-            return;
-          }
-          showToast("Кнопка отправки не найдена. Результат оставлен в поле ввода.", true);
-        }, 500);
+        confirmSend(result, input, 0);
         return;
       }
 
-      button.click();
-      const confirmSend = (check = 0) => {
+      try {
+        button.click();
+      } catch (error) {
+        result.delivering = false;
+        result.retryAt = Date.now() + 5000;
+        showToast(`Не удалось нажать отправку: ${error.message || String(error)}. Результат остаётся в очереди.`, true);
         setTimeout(() => {
-          if (getInputText(input).trim() !== result.message) {
-            pendingResults.shift();
-            showToast("Результат отправлен в чат.");
-            return;
-          }
-          if (check < 5) {
-            confirmSend(check + 1);
-            return;
-          }
-          pendingResults.shift();
-          showToast(
-            "Не удалось подтвердить отправку. Результат оставлен в поле ввода.",
-            true,
-          );
-        }, 200);
-      };
-      confirmSend();
+          result.retryAt = 0;
+          deliverPendingResults();
+        }, 5000);
+        return;
+      }
+      confirmSend(result, input, 0);
     }, 100);
+  }
+
+  function confirmSend(result, input, check) {
+    setTimeout(() => {
+      const currentText = getInputText(input).trim();
+      if (resultIsInChat(result) || !currentText) {
+        finishPendingResult(result, "Результат отправлен в чат.");
+        return;
+      }
+      if (currentText !== result.message) {
+        result.delivering = false;
+        showToast("Поле ввода изменилось; результат оставлен в очереди.", true);
+        return;
+      }
+      if (check < 20) {
+        confirmSend(result, input, check + 1);
+        return;
+      }
+
+      result.delivering = false;
+      result.retryAt = Date.now() + 5000;
+      showToast("Не удалось подтвердить отправку. Результат оставлен в поле и будет повторен.", true);
+      setTimeout(() => {
+        result.retryAt = 0;
+        deliverPendingResults();
+      }, 5000);
+    }, 250);
   }
 
   function summarizeResults(results) {
@@ -633,11 +724,14 @@
     }));
     const summary = summarizeResults(formattedResults);
     showToast(`Готово: ${commands.length} команд. ${summary}`);
-    const delayMs = await getSendDelayMs();
+    const delayMs = await getSendDelayMs(runtime);
     pendingResults.push({
       message: globalThis.DSPwshCommandUtils.formatResults(formattedResults),
       summary,
       readyAt: Date.now() + delayMs,
+      existingUserMessages: new Set(
+        Array.from(document.querySelectorAll(".ds-message")).filter(isUserMessage),
+      ),
     });
     deliverPendingResults();
   }
@@ -803,6 +897,10 @@
   }
 
   chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
+    if (message?.type === "PARSE_LAST_RESPONSE") {
+      sendResponse(parseLatestAssistantResponse());
+      return false;
+    }
     if (message?.type !== "DELETE_CURRENT_CHAT") return false;
     deleteCurrentChat()
       .then(sendResponse)

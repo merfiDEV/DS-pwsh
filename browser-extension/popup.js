@@ -139,6 +139,22 @@ document
   });
 
 const deleteDialog = document.getElementById("delete-confirm");
+document.getElementById("parse-last-response").addEventListener("click", async (event) => {
+  const button = event.currentTarget;
+  button.disabled = true;
+  try {
+    const [tab] = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
+    if (!tab?.id) throw new Error("Не найдена активная вкладка браузера.");
+    const response = await chrome.tabs.sendMessage(tab.id, { type: "PARSE_LAST_RESPONSE" });
+    if (!response?.ok) throw new Error(response?.error || "Последний ответ не разобран.");
+    showNotice(`Найдено команд: ${response.count}. Применяются настройки подтверждения и автозапуска.`);
+  } catch (error) {
+    showNotice(`${error.message || String(error)} Проверь, что открыта вкладка DeepSeek и обнови её.`, true);
+  } finally {
+    button.disabled = false;
+  }
+});
+
 document.getElementById("delete-current-chat").addEventListener("click", () => {
   deleteDialog.showModal();
 });

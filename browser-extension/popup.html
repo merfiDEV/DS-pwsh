@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>DS-pwsh</title>
+    <link rel="stylesheet" href="popup.css">
+  </head>
+  <body>
+    <main class="panel">
+      <h1>DS-pwsh</h1>
+
+      <section>
+        <h2>Подключение</h2>
+        <p id="status-title">Проверка соединения</p>
+        <p id="status-detail">Ищем локальный порт…</p>
+      </section>
+
+      <section>
+        <h2>Рабочая область</h2>
+        <label for="project-dir">Папка проекта</label>
+        <input id="project-dir" type="text" placeholder="Папка запуска моста" spellcheck="false" autocomplete="off">
+      </section>
+
+      <section>
+        <h2>Выполнение</h2>
+        <label class="row" for="auto-run">
+          <span>Автоматический запуск</span>
+          <input id="auto-run" type="checkbox">
+        </label>
+        <label class="row" for="confirm-commands">
+          <span>Подтверждать каждую команду</span>
+          <input id="confirm-commands" type="checkbox">
+        </label>
+      </section>
+
+      <div class="actions">
+        <button id="save" type="button">Сохранить папку</button>
+        <button id="copy-instructions" type="button">Скопировать инструкцию</button>
+      </div>
+
+      <p id="notice" role="status" aria-live="polite"></p>
+    </main>
+    <script src="popup.js"></script>
+  </body>
+</html>

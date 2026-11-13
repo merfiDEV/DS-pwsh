@@ -1,0 +1,8 @@
+node_modules/
+bridge/.rich-venv/
+dist/
+build/
+release/
+*.min.js
+*.bak
+*.part

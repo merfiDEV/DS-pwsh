@@ -1,0 +1,39 @@
+{
+  "name": "ds-pwsh-terminal-bridge",
+  "version": "1.1.6",
+  "description": "Chrome extension + local terminal bridge that runs AI-issued shell commands on chat.deepseek.com.",
+  "license": "MIT",
+  "private": false,
+  "type": "commonjs",
+  "main": "bridge/host.js",
+  "bin": {
+    "ds-pwsh-bridge": "bridge/host.js"
+  },
+  "scripts": {
+    "start": "node bridge/host.js",
+    "test": "node --test test/",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "devDependencies": {
+    "eslint": "^9.15.0",
+    "prettier": "^3.4.0"
+  },
+  "files": [
+    "bridge/host.js",
+    "bridge/rich-log.py",
+    "command-utils.js",
+    "background.js",
+    "content.js",
+    "popup.html",
+    "popup.js",
+    "popup.css",
+    "manifest.json",
+    "README.md"
+  ]
+}

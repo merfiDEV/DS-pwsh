@@ -20,3 +20,5 @@ rich-log-bin
 rich-log-bin.bin
 rich-log-bin.exe
 rich-log.exe
+
+*.bak*

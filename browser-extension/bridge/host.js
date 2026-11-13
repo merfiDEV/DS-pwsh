@@ -273,6 +273,36 @@ function createBridgeServer(options = {}) {
   });
 }
 
+function openBrowser(url) {
+  if (process.env.DS_PWSH_NO_OPEN === "1") return;
+  const platform = process.platform;
+  let command;
+  let args;
+  if (platform === "win32") {
+    command = "cmd";
+    args = ["/c", "start", "", url];
+  } else if (platform === "darwin") {
+    command = "open";
+    args = [url];
+  } else {
+    command = "xdg-open";
+    args = [url];
+  }
+  try {
+    const child = spawn(command, args, {
+      detached: true,
+      stdio: "ignore",
+      windowsHide: true,
+    });
+    child.on("error", (error) => {
+      console.warn(`[DS-pwsh] Could not open browser: ${error.message}`);
+    });
+    child.unref();
+  } catch (error) {
+    console.warn(`[DS-pwsh] Could not open browser: ${error.message}`);
+  }
+}
+
 if (require.main === module) {
   const server = createBridgeServer();
   listenOnAvailablePort(server)
@@ -280,6 +310,7 @@ if (require.main === module) {
       console.log(`[DS-pwsh] Terminal bridge listening at http://${HOST}:${port}`);
       console.log(`[DS-pwsh] Shell: ${shellForPlatform(process.platform)}`);
       console.log(`[DS-pwsh] Working directory: ${path.resolve(process.cwd())}`);
+      openBrowser("https://chat.deepseek.com/");
     })
     .catch((error) => {
       console.error(`[DS-pwsh] Terminal bridge failed to start: ${error.message}`);

@@ -1,14 +1,4 @@
 (() => {
-  function normalizeCommand(command) {
-    const lines = command.trim().split("\n");
-    const firstLine = lines.findIndex((line) => line.trim());
-    if (firstLine !== -1 && /^\s*[-*](?:\s+|$)/.test(lines[firstLine])) {
-      lines[firstLine] = lines[firstLine].replace(/^(\s*)[-*](?:\s+|$)/, "$1");
-      if (!lines[firstLine].trim()) lines.splice(firstLine, 1);
-    }
-    return lines.join("\n").trim();
-  }
-
   function collectCommands(blocks, getShell, getCommand) {
     return blocks
       .map((block) => ({
@@ -16,7 +6,7 @@
         shell: getShell(block),
         command: getCommand(block),
       }))
-      .filter(({ shell, command }) => shell && command);
+      .filter(({ shell, command }) => shell && typeof command === "string" && command.trim());
   }
 
   async function runSequentially(items, execute) {
@@ -57,7 +47,7 @@
       : formatted;
   }
 
-  const api = { collectCommands, formatResults, normalizeCommand, runSequentially };
+  const api = { collectCommands, formatResults, runSequentially };
   if (typeof module !== "undefined" && module.exports) {
     module.exports = api;
   } else {

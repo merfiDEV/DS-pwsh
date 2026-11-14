@@ -5,19 +5,18 @@ const { test } = require("node:test");
 const {
   collectCommands,
   formatResults,
-  normalizeCommand,
   runSequentially,
 } = require("../command-utils");
 
-test("normalizeCommand removes a leading Markdown list marker", () => {
-  assert.equal(normalizeCommand('- echo "test"'), 'echo "test"');
-  assert.equal(normalizeCommand("-\necho test"), "echo test");
-  assert.equal(normalizeCommand("  *   echo test"), "echo test");
-});
+test("collectCommands preserves command text exactly", () => {
+  const command = '  - echo "a b"; x=$(printf \'raw\')\n  echo done  \n';
+  const commands = collectCommands(
+    [{ shell: "bash", command }],
+    (block) => block.shell,
+    (block) => block.command,
+  );
 
-test("normalizeCommand preserves shell options and later lines", () => {
-  assert.equal(normalizeCommand("echo -n test\nprintf done"), "echo -n test\nprintf done");
-  assert.equal(normalizeCommand("  echo test"), "echo test");
+  assert.equal(commands[0].command, command);
 });
 
 test("collectCommands finds all supported blocks in message order", () => {
@@ -29,12 +28,12 @@ test("collectCommands finds all supported blocks in message order", () => {
   const commands = collectCommands(
     blocks,
     (block) => (block.shell === "bash" ? block.shell : ""),
-    (block) => normalizeCommand(block.command),
+    (block) => block.command,
   );
 
   assert.deepEqual(
     commands.map(({ command }) => command),
-    ["echo first", "printf second"],
+    ["- echo first", "printf second"],
   );
   assert.deepEqual(
     commands.map(({ block }) => block),

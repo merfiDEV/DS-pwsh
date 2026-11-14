@@ -193,9 +193,7 @@
   function getCommand(pre) {
     const code = pre.matches?.("code") ? pre : pre.querySelector("code");
     const source = code || pre;
-    return globalThis.DSPwshCommandUtils.normalizeCommand(
-      source.innerText || source.textContent || "",
-    );
+    return source.textContent || "";
   }
 
   function latestAssistantMessage() {

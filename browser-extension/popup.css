@@ -1,3 +1,12 @@
+@font-face {
+  font-family: "FriggCafe";
+  src: url("FriggCafe-Regular.woff2") format("woff2"),
+       url("FriggCafe-Regular.ttf") format("truetype");
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
 * {
   box-sizing: border-box;
 }
@@ -8,7 +17,7 @@ body {
   color: #e6e6e6;
   background: #1a1a1a;
   font:
-    13px/1.5 system-ui,
+    13px/1.5 "FriggCafe", system-ui,
     sans-serif;
 }
 

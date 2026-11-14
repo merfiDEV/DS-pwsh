@@ -1,7 +1,7 @@
 @font-face {
   font-family: "FriggCafe";
-  src: url("FriggCafe-Regular.woff2") format("woff2"),
-       url("FriggCafe-Regular.ttf") format("truetype");
+  src: url("assets/fonts/FriggCafe-Regular.woff2") format("woff2"),
+       url("assets/fonts/FriggCafe-Regular.ttf") format("truetype");
   font-weight: normal;
   font-style: normal;
   font-display: swap;

@@ -52,7 +52,7 @@ function executeCommand({ shell, command, cwd }, options = {}) {
           "-Command",
           `[Console]::OutputEncoding = [System.Text.Encoding]::UTF8; $OutputEncoding = [Console]::OutputEncoding; ${command}`,
         ]
-      : ["-c", command];
+      : ["-s"];
 
   return new Promise((resolve, reject) => {
     let child;
@@ -60,7 +60,7 @@ function executeCommand({ shell, command, cwd }, options = {}) {
       child = spawn(executable, args, {
         cwd,
         windowsHide: true,
-        stdio: ["ignore", "pipe", "pipe"],
+        stdio: [shell === "bash" ? "pipe" : "ignore", "pipe", "pipe"],
       });
     } catch (error) {
       reject(error);
@@ -87,6 +87,12 @@ function executeCommand({ shell, command, cwd }, options = {}) {
 
     child.stdout.on("data", collect(stdout));
     child.stderr.on("data", collect(stderr));
+    if (shell === "bash") {
+      child.stdin.once("error", (error) => {
+        if (error.code !== "EPIPE") reject(error);
+      });
+      child.stdin.end(command);
+    }
     const timeout = setTimeout(() => {
       timedOut = true;
       child.kill();

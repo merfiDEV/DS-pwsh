@@ -8,6 +8,7 @@ const { test } = require("node:test");
 const {
   createBridgeServer,
   configuredMinimumSendDelay,
+  executeCommand,
   listenOnAvailablePort,
   shellForPlatform,
   validateExecutionRequest,
@@ -180,6 +181,29 @@ test("bridge executes a command and returns its output", async (t) => {
     exitCode: 0,
     output: "Привет! DS-pwsh на связи.",
   });
+});
+
+test("bash receives commands through stdin without changing shell syntax or long arguments", async () => {
+  const longArgument = `/${"very-long-path-segment-".repeat(500)}file.bak`;
+  const command = [
+    'echo "a b"',
+    'bash -c "echo hello-dash"',
+    "x=1; echo $x",
+    'printf \'%s\\n\' "$(printf nested)"',
+    "echo 'quoted'",
+    `printf '%s' '${longArgument}'`,
+  ].join("\n");
+
+  const result = await executeCommand(
+    { shell: "bash", command, cwd: process.cwd() },
+    { timeoutMs: 5_000 },
+  );
+
+  assert.equal(result.exitCode, 0);
+  assert.equal(
+    result.output,
+    `a b\nhello-dash\n1\nnested\nquoted\n${longArgument}`,
+  );
 });
 
 test("bridge returns command results immediately and exposes the client send delay", async (t) => {
